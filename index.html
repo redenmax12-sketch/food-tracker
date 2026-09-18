@@ -98,7 +98,7 @@
 <body>
 
     <header>
-        <h1 data-i18n="appTitle">Food Tracker Beast</h1>
+        <h1 data-i18n="appTitle" >Food Tracker Beast1</h1>
         <button class="lang-btn" onclick="toggleLanguage()">Kurdish / کوردی</button>
     </header>
 
@@ -387,7 +387,23 @@
         let currentLogs = [];
         let macroChartInstance = null;
 
-        let foodDatabase = [
+        let foodDatabase = [// --- RULE 1 NUTRITION SUPPLEMENTS ---
+            {en: "Rule 1 R1 Protein Isolate (Chocolate Fudge)", ku: "ڕوڵ وەن پرۆتین ئایزۆلێت (چۆکڵێت)", p: 86.2, c: 3.4, cal: 379, barcode: "858882006004"},
+            {en: "Rule 1 R1 Protein Isolate (Vanilla Butter Cake)", ku: "ڕوڵ وەن پرۆتین ئایزۆلێت (ڤانێلا)", p: 86.2, c: 3.4, cal: 379, barcode: "858882006011"},
+            {en: "Rule 1 R1 Protein Isolate (Strawberries & Cream)", ku: "ڕوڵ وەن پرۆتین ئایزۆلێت (فراولە)", p: 85.7, c: 3.5, cal: 375, barcode: "858882006028"},
+            {en: "Rule 1 R1 Whey Blend (Chocolate Fudge)", ku: "ڕوڵ وەن وەی بلێند (چۆکڵێت)", p: 72.7, c: 12.1, cal: 394, barcode: "858882006059"},
+            {en: "Rule 1 R1 Whey Blend (Vanilla Ice Cream)", ku: "ڕوڵ وەن وەی بلێند (ڤانێلا)", p: 72.7, c: 9.1, cal: 394, barcode: "858882006066"},
+            {en: "Rule 1 R1 Whey Blend (Cookies & Creme)", ku: "ڕوڵ وەن وەی بلێند (کۆکیز)", p: 70.6, c: 11.8, cal: 382, barcode: "858882006073"},
+            {en: "Rule 1 R1 LBS High Calorie Mass Gainer", ku: "ڕوڵ وەن گەینەر مەس (LBS)", p: 14.5, c: 73.8, cal: 367, barcode: "858882006202"},
+            {en: "Rule 1 R1 Creatine Monohydrate Unflavored", ku: "ڕوڵ وەن کریاتین مۆنۆهایدرەیت", p: 0, c: 0, cal: 0, barcode: "858882006400"},
+            {en: "Rule 1 R1 Charged Creatine (Blue Raspberry)", ku: "ڕوڵ وەن چارج کریاتین", p: 0, c: 11.1, cal: 44, barcode: "858882006424"},
+            {en: "Rule 1 R1 Pre-Train Pre-Workout (Blue Razz)", ku: "ڕوڵ وەن پڕی ۆرکئاوت (وزەبەخش)", p: 0, c: 12.5, cal: 50, barcode: "858882006301"},
+            {en: "Rule 1 R1 BCAA Essential Amino Acids", ku: "ڕوڵ وەن بی سی ئەی ئەی (BCAA)", p: 70.0, c: 0, cal: 280, barcode: "858882006509"},
+            {en: "Rule 1 R1 Glutamine Micronized", ku: "ڕوڵ وەن گلوتامین", p: 100.0, c: 0, cal: 400, barcode: "858882006455"},
+            {en: "Rule 1 R1 Casein Slow Release Protein", ku: "ڕوڵ وەن پرۆتین کازین", p: 73.5, c: 8.8, cal: 353, barcode: "858882006158"},
+            {en: "Rule 1 R1 Clean Gainer (Lean Mass)", ku: "ڕوڵ وەن کلین گەینەر", p: 21.0, c: 59.6, cal: 395, barcode: "858882006257"},
+
+            // --- LOCAL & KURDISH STAPLES ---
             {en: "Biryani Kurdish", ku: "بریانی کوردی", p: 8.5, c: 24, cal: 185},
             {en: "Yaprax / Dolma Kurdish", ku: "یاپراخ / دۆڵمەی کوردی", p: 4.5, c: 18, cal: 145},
             {en: "Kifte Kurdish (Stuffed)", ku: "کفتەی کوردی", p: 12, c: 15, cal: 210},
@@ -404,6 +420,8 @@
             {en: "Apple (Red Delicious)", ku: "سێو (Red Delicious)", p: 0.3, c: 13.8, cal: 52},
             {en: "Banana (Ripe)", ku: "مۆز (Ripe)", p: 1.1, c: 22.8, cal: 89}
         ];
+            
+        
 
         const favoriteFoods = ["Kalane (Kurdish Wild Leek Bread)", "Grilled Chicken Breast", "Yaprax / Dolma Kurdish", "Kurdish Tea (Cha)", "Boiled White Rice"];
 
