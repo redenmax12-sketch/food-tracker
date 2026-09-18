@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href='data:application/manifest+json,{"name":"Food Tracker Beast","short_name":"FoodTracker","start_url":".","display":"standalone","background_color":"#f4f7f6","theme_color":"#1f4e79","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1046/1046784.png","sizes":"512x512","type":"image/png"}]}'>
 
-    <!-- SDKs: EmailJS, Supabase, html5-qrcode, and Chart.js -->
+    <!-- SDKs -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -61,7 +61,6 @@
 
         #scannerContainer { display: none; margin-bottom: 12px; border: 2px dashed #8e44ad; border-radius: 8px; padding: 8px; background: #fafafa; }
 
-        /* Chart & Macros Grid */
         .analytics-grid { display: grid; grid-template-columns: 1fr 140px; gap: 15px; align-items: center; margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
         .progress-bar-group { margin-bottom: 8px; }
         .progress-bar-group:last-child { margin-bottom: 0; }
@@ -87,7 +86,6 @@
         .export-btn { background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
         .back-btn { background: #1f4e79; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 12px; }
 
-        /* Modals */
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 10px; width: 360px; max-width: 90vw; }
 
@@ -98,7 +96,7 @@
 <body>
 
     <header>
-        <h1 data-i18n="appTitle" >Food Tracker Beast</h1>
+        <h1 data-i18n="appTitle">Food Tracker Beast 0</h1>
         <button class="lang-btn" onclick="toggleLanguage()">Kurdish / کوردی</button>
     </header>
 
@@ -159,7 +157,6 @@
             <div class="date-badge" id="currentDateDisplay">Date: --</div>
         </div>
 
-        <!-- MACRO ANALYTICS: PROGRESS BARS + DONUT CHART -->
         <div class="analytics-grid">
             <div class="progress-section">
                 <div class="progress-bar-group">
@@ -276,7 +273,7 @@
         </div>
     </div>
 
-    <!-- MODAL 1: GOALS CONFIGURATION -->
+    <!-- MODAL 1: GOALS -->
     <div class="modal" id="goalsModal">
         <div class="modal-content">
             <h3 style="margin-bottom:12px; color:#1f4e79;">🎯 Set Daily Targets</h3>
@@ -297,13 +294,13 @@
         </div>
     </div>
 
-    <!-- MODAL 2: CUSTOM FOOD CREATOR -->
+    <!-- MODAL 2: CUSTOM DISH -->
     <div class="modal" id="customFoodModal">
         <div class="modal-content">
             <h3 style="margin-bottom:12px; color:#16a085;">➕ Add Custom Recipe / Dish</h3>
             <div class="form-group">
                 <label>Dish Name:</label>
-                <input type="text" id="custNameInput" placeholder="e.g. My Grandma Stew">
+                <input type="text" id="custNameInput" placeholder="e.g. My Homemade Stew">
             </div>
             <div class="form-group">
                 <label>Calories per 100g:</label>
@@ -323,10 +320,6 @@
     </div>
 
     <script>
-        // =========================================================================
-        // FULLY AUTOMATIC UPDATE ENGINE (NO MANUAL VERSION NUMBERS NEEDED)
-        // Automatically queries GitHub's commits API to detect any new push
-        // =========================================================================
         const GITHUB_REPO = "redenmax12-sketch/food-tracker";
 
         async function checkAutoUpdate() {
@@ -349,17 +342,17 @@
 
                 if (storedCommitSha !== latestCommitSha) {
                     localStorage.setItem('last_installed_commit', latestCommitSha);
-                    
                     if ('serviceWorker' in navigator) {
                         const registrations = await navigator.serviceWorker.getRegistrations();
                         for (let reg of registrations) {
                             await reg.unregister();
                         }
                     }
-
-                    window.location.reload(true);
+                    window.location.reload();
                 }
-            } catch (e) {}
+            } catch (e) {
+                // Fallback for offline usage
+            }
         }
 
         window.addEventListener('load', checkAutoUpdate);
@@ -367,9 +360,6 @@
             if (document.visibilityState === 'visible') checkAutoUpdate();
         });
 
-        // =========================================================================
-        // APP CONFIGURATION & CLIENTS
-        // =========================================================================
         const SUPABASE_URL = "https://xmxcxkinfzvfhhkqquib.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhteGN4a2luZnp2Zmhoa3FxdWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNDE2MDEsImV4cCI6MjEwNDcxNzYwMX0.DmIpGkOL4uXgw6R_3xLbhakXswTzz22hUFdz8aSXfew";
 
@@ -387,23 +377,12 @@
         let currentLogs = [];
         let macroChartInstance = null;
 
-        let foodDatabase = [// --- RULE 1 NUTRITION SUPPLEMENTS ---
+        let foodDatabase = [
             {en: "Rule 1 R1 Protein Isolate (Chocolate Fudge)", ku: "ڕوڵ وەن پرۆتین ئایزۆلێت (چۆکڵێت)", p: 86.2, c: 3.4, cal: 379, barcode: "858882006004"},
             {en: "Rule 1 R1 Protein Isolate (Vanilla Butter Cake)", ku: "ڕوڵ وەن پرۆتین ئایزۆلێت (ڤانێلا)", p: 86.2, c: 3.4, cal: 379, barcode: "858882006011"},
-            {en: "Rule 1 R1 Protein Isolate (Strawberries & Cream)", ku: "ڕوڵ وەن پرۆتین ئایزۆلێت (فراولە)", p: 85.7, c: 3.5, cal: 375, barcode: "858882006028"},
             {en: "Rule 1 R1 Whey Blend (Chocolate Fudge)", ku: "ڕوڵ وەن وەی بلێند (چۆکڵێت)", p: 72.7, c: 12.1, cal: 394, barcode: "858882006059"},
             {en: "Rule 1 R1 Whey Blend (Vanilla Ice Cream)", ku: "ڕوڵ وەن وەی بلێند (ڤانێلا)", p: 72.7, c: 9.1, cal: 394, barcode: "858882006066"},
-            {en: "Rule 1 R1 Whey Blend (Cookies & Creme)", ku: "ڕوڵ وەن وەی بلێند (کۆکیز)", p: 70.6, c: 11.8, cal: 382, barcode: "858882006073"},
-            {en: "Rule 1 R1 LBS High Calorie Mass Gainer", ku: "ڕوڵ وەن گەینەر مەس (LBS)", p: 14.5, c: 73.8, cal: 367, barcode: "858882006202"},
-            {en: "Rule 1 R1 Creatine Monohydrate Unflavored", ku: "ڕوڵ وەن کریاتین مۆنۆهایدرەیت", p: 0, c: 0, cal: 0, barcode: "858882006400"},
-            {en: "Rule 1 R1 Charged Creatine (Blue Raspberry)", ku: "ڕوڵ وەن چارج کریاتین", p: 0, c: 11.1, cal: 44, barcode: "858882006424"},
-            {en: "Rule 1 R1 Pre-Train Pre-Workout (Blue Razz)", ku: "ڕوڵ وەن پڕی ۆرکئاوت (وزەبەخش)", p: 0, c: 12.5, cal: 50, barcode: "858882006301"},
-            {en: "Rule 1 R1 BCAA Essential Amino Acids", ku: "ڕوڵ وەن بی سی ئەی ئەی (BCAA)", p: 70.0, c: 0, cal: 280, barcode: "858882006509"},
-            {en: "Rule 1 R1 Glutamine Micronized", ku: "ڕوڵ وەن گلوتامین", p: 100.0, c: 0, cal: 400, barcode: "858882006455"},
-            {en: "Rule 1 R1 Casein Slow Release Protein", ku: "ڕوڵ وەن پرۆتین کازین", p: 73.5, c: 8.8, cal: 353, barcode: "858882006158"},
-            {en: "Rule 1 R1 Clean Gainer (Lean Mass)", ku: "ڕوڵ وەن کلین گەینەر", p: 21.0, c: 59.6, cal: 395, barcode: "858882006257"},
-
-            // --- LOCAL & KURDISH STAPLES ---
+            {en: "Rule 1 R1 Creatine Monohydrate", ku: "ڕوڵ وەن کریاتین", p: 0, c: 0, cal: 0, barcode: "858882006400"},
             {en: "Biryani Kurdish", ku: "بریانی کوردی", p: 8.5, c: 24, cal: 185},
             {en: "Yaprax / Dolma Kurdish", ku: "یاپراخ / دۆڵمەی کوردی", p: 4.5, c: 18, cal: 145},
             {en: "Kifte Kurdish (Stuffed)", ku: "کفتەی کوردی", p: 12, c: 15, cal: 210},
@@ -420,8 +399,6 @@
             {en: "Apple (Red Delicious)", ku: "سێو (Red Delicious)", p: 0.3, c: 13.8, cal: 52},
             {en: "Banana (Ripe)", ku: "مۆز (Ripe)", p: 1.1, c: 22.8, cal: 89}
         ];
-            
-        
 
         const favoriteFoods = ["Kalane (Kurdish Wild Leek Bread)", "Grilled Chicken Breast", "Yaprax / Dolma Kurdish", "Kurdish Tea (Cha)", "Boiled White Rice"];
 
@@ -460,6 +437,7 @@
 
         function populateFoodDatalist() {
             const datalist = document.getElementById('foodDatalist');
+            if (!datalist) return;
             datalist.innerHTML = '';
             foodDatabase.forEach(food => {
                 const opt = document.createElement('option');
@@ -470,6 +448,7 @@
 
         function renderQuickChips() {
             const container = document.getElementById('quickChips');
+            if (!container) return;
             container.innerHTML = '';
             favoriteFoods.forEach(name => {
                 const item = foodDatabase.find(f => f.en === name);
@@ -499,7 +478,8 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
-            document.getElementById(pageId).style.display = 'block';
+            const target = document.getElementById(pageId);
+            if (target) target.style.display = 'block';
             document.querySelectorAll('.activeUserSpan').forEach(el => el.innerText = currentUser || '');
 
             if (pageId === 'dailyTrackerPage') initTrackerPage();
@@ -513,7 +493,6 @@
             showPage('loginPage');
         }
 
-        /* --- AUTHENTICATION FLOW --- */
         document.getElementById('signupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const username = document.getElementById('signupUsername').value.trim();
@@ -560,36 +539,42 @@
             }
 
             currentUser = user.username;
-            currentUserIsAdmin = !!user.is_admin;
+            currentUserIsAdmin = Boolean(user.is_admin);
             userGoals.cal = Number(user.target_cal) || 2000;
             userGoals.protein = Number(user.target_protein) || 140;
             userGoals.carb = Number(user.target_carb) || 225;
 
-            document.getElementById('adminPortalBtn').style.display = currentUserIsAdmin ? 'inline-block' : 'none';
+            const adminBtn = document.getElementById('adminPortalBtn');
+            if (adminBtn) adminBtn.style.display = currentUserIsAdmin ? 'inline-block' : 'none';
 
             await loadCustomDishes();
             showPage('dailyTrackerPage');
         });
 
-        /* --- CLOUD FOOD LOGS & CHARTS --- */
         async function initTrackerPage() {
-            document.getElementById('historyDateSelect').value = selectedTrackerDate;
-            document.getElementById('currentDateDisplay').innerText = `Date: ${selectedTrackerDate}`;
+            const dateInput = document.getElementById('historyDateSelect');
+            if (dateInput) dateInput.value = selectedTrackerDate;
+            const dateDisplay = document.getElementById('currentDateDisplay');
+            if (dateDisplay) dateDisplay.innerText = `Date: ${selectedTrackerDate}`;
             renderQuickChips();
             initChart();
             await fetchAndRenderCloudLogs();
         }
 
         async function changeTrackerDateView() {
-            selectedTrackerDate = document.getElementById('historyDateSelect').value;
+            const dateInput = document.getElementById('historyDateSelect');
+            if (!dateInput) return;
+            selectedTrackerDate = dateInput.value;
             document.getElementById('currentDateDisplay').innerText = `Date: ${selectedTrackerDate}`;
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('trackerInputArea').style.display = selectedTrackerDate !== today ? 'none' : 'block';
+            const inputArea = document.getElementById('trackerInputArea');
+            if (inputArea) inputArea.style.display = selectedTrackerDate !== today ? 'none' : 'block';
             await fetchAndRenderCloudLogs();
         }
 
         async function fetchAndRenderCloudLogs() {
             const tbody = document.getElementById('trackerTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Syncing with Supabase...</td></tr>';
 
             const { data: logs, error } = await supabaseClient.from('food_logs').select('*').eq('username', currentUser).eq('date', selectedTrackerDate).order('id', { ascending: true });
@@ -685,27 +670,34 @@
             const carbPct = Math.min(100, Math.round((totCarb / userGoals.carb) * 100));
 
             const calFill = document.getElementById('barCalFill');
-            calFill.style.width = calPct + '%';
-            calFill.classList.toggle('over-limit', totCal > userGoals.cal);
+            if (calFill) {
+                calFill.style.width = calPct + '%';
+                calFill.classList.toggle('over-limit', totCal > userGoals.cal);
+            }
             document.getElementById('barCalText').innerText = `${totCal.toFixed(0)} / ${userGoals.cal} kcal`;
             document.getElementById('barCalPct').innerText = `${Math.round((totCal / userGoals.cal) * 100)}%`;
 
             const protFill = document.getElementById('barProtFill');
-            protFill.style.width = protPct + '%';
-            protFill.classList.toggle('over-limit', totProt > userGoals.protein);
+            if (protFill) {
+                protFill.style.width = protPct + '%';
+                protFill.classList.toggle('over-limit', totProt > userGoals.protein);
+            }
             document.getElementById('barProtText').innerText = `${totProt.toFixed(1)} / ${userGoals.protein}g`;
             document.getElementById('barProtPct').innerText = `${Math.round((totProt / userGoals.protein) * 100)}%`;
 
             const carbFill = document.getElementById('barCarbFill');
-            carbFill.style.width = carbPct + '%';
-            carbFill.classList.toggle('over-limit', totCarb > userGoals.carb);
+            if (carbFill) {
+                carbFill.style.width = carbPct + '%';
+                carbFill.classList.toggle('over-limit', totCarb > userGoals.carb);
+            }
             document.getElementById('barCarbText').innerText = `${totCarb.toFixed(1)} / ${userGoals.carb}g`;
             document.getElementById('barCarbPct').innerText = `${Math.round((totCarb / userGoals.carb) * 100)}%`;
         }
 
-        /* --- CHART.JS DONUT CHART --- */
         function initChart() {
-            const ctx = document.getElementById('macroChart').getContext('2d');
+            const canvas = document.getElementById('macroChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (macroChartInstance) macroChartInstance.destroy();
             macroChartInstance = new Chart(ctx, {
                 type: 'doughnut',
@@ -735,7 +727,6 @@
             macroChartInstance.update();
         }
 
-        /* --- EXPORT TO CSV / EXCEL --- */
         function exportToCSV() {
             if (!currentLogs || currentLogs.length === 0) {
                 alert("No food logs found for this date to export.");
@@ -756,7 +747,6 @@
             URL.revokeObjectURL(url);
         }
 
-        /* --- GLOBAL OPEN FOOD FACTS API + BARCODE SCANNER --- */
         let html5QrCode = null;
 
         function toggleBarcodeScanner() {
@@ -794,7 +784,6 @@
         async function onBarcodeScanned(barcode) {
             stopBarcodeScanner();
 
-            // 1. Check local catalog
             const localItem = foodDatabase.find(f => f.barcode === barcode);
             if (localItem) {
                 document.getElementById('trackerFoodInput').value = localItem.ku ? `${localItem.en} (${localItem.ku})` : localItem.en;
@@ -803,7 +792,6 @@
                 return;
             }
 
-            // 2. Query Global Open Food Facts API
             try {
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
                 const data = await res.json();
@@ -830,9 +818,8 @@
             }
         }
 
-        /* --- CUSTOM DISH CREATOR --- */
         async function loadCustomDishes() {
-            const { data: dishes, error } = await supabaseClient.from('custom_foods').select('*').eq('username', currentUser);
+            const { data: dishes } = await supabaseClient.from('custom_foods').select('*').eq('username', currentUser);
             if (dishes) {
                 dishes.forEach(d => {
                     if (!foodDatabase.some(f => f.en === d.name)) {
@@ -869,7 +856,6 @@
             alert(`"${name}" saved to your permanent personal database!`);
         }
 
-        /* --- USER GOALS MODAL --- */
         function openGoalsModal() {
             document.getElementById('goalCalInput').value = userGoals.cal;
             document.getElementById('goalProteinInput').value = userGoals.protein;
@@ -896,7 +882,6 @@
             await fetchAndRenderCloudLogs();
         }
 
-        /* --- ADMIN DASHBOARD --- */
         async function loadAdminUsers() {
             const tbody = document.getElementById('adminUserTableBody');
             tbody.innerHTML = '<tr><td colspan="3">Loading users...</td></tr>';
@@ -925,9 +910,12 @@
             loadAdminUsers();
         }
 
-        // Initialize autocompletes & date
+        // Initialize setup
         populateFoodDatalist();
-        document.getElementById('historyDateSelect').value = selectedTrackerDate;
+        const initialDateEl = document.getElementById('historyDateSelect');
+        if (initialDateEl) {
+            initialDateEl.value = selectedTrackerDate;
+        }
     </script>
 </body>
 </html>
