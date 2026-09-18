@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Tracker Pro</title>
+    
+    <!-- PWA Mobile Meta Tags & Embedded Web Manifest -->
+    <meta name="theme-color" content="#1f4e79">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Food Tracker Pro","short_name":"FoodTracker","start_url":".","display":"standalone","background_color":"#f4f7f6","theme_color":"#1f4e79","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1046/1046784.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <!-- SDKs: EmailJS, Supabase, and html5-qrcode for barcode scanning -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; padding: 15px; }
+        
+        header { text-align: center; margin-bottom: 15px; width: 100%; max-width: 850px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { color: #1f4e79; font-size: 1.8rem; }
+
+        .lang-btn { background: #1f4e79; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+
+        .card { background: white; width: 440px; max-width: 95vw; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #ddd; position: relative; }
+        .card.wide { width: 850px; max-width: 95vw; }
+        .card h2 { color: #2c3e50; font-size: 1.3rem; margin-bottom: 15px; text-align: center; }
+
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .user-badge { font-weight: bold; color: #1f4e79; }
+        .btn-group-right { display: flex; gap: 6px; }
+        .logout-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+        .admin-nav-btn { background: #d35400; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.9rem; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 0.95rem; }
+        .portion-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-primary { background-color: #1f4e79; color: white; }
+        .btn-primary:hover { background-color: #153452; }
+        .btn-success { background-color: #27ae60; color: white; }
+        .btn-scanner { background-color: #8e44ad; color: white; margin-bottom: 12px; }
+
+        .toggle-link { display: block; text-align: center; margin-top: 15px; color: #1f4e79; text-decoration: none; font-weight: bold; cursor: pointer; }
+        .message { text-align: center; margin-top: 10px; font-size: 0.9rem; }
+
+        .nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; }
+        .nav-btn { flex: 1; padding: 10px; background: #e0e0e0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; color: #333; text-align: center; }
+
+        .content-box { border: 1px solid #aaa; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #fff; }
+
+        /* Quick Add Chips */
+        .quick-chips-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #555; }
+        .quick-chips-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .quick-chip { background: #eef5fc; border: 1px solid #bcd8f1; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; color: #1f4e79; font-weight: bold; }
+        .quick-chip:hover { background: #d7e8fa; }
+
+        /* Camera Scanner Modal Container */
+        #scannerContainer { display: none; margin-bottom: 12px; border: 2px dashed #8e44ad; border-radius: 8px; padding: 8px; background: #fafafa; }
+
+        /* Macro Progress Bars */
+        .progress-section { margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        .progress-bar-group { margin-bottom: 10px; }
+        .progress-bar-group:last-child { margin-bottom: 0; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
+        .progress-bg { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.3s ease; }
+        .cal-fill { background-color: #e67e22; }
+        .protein-fill { background-color: #2980b9; }
+        .carb-fill { background-color: #27ae60; }
+        .over-limit { background-color: #e74c3c !important; }
+
+        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+        th { background: #1f4e79; color: white; position: sticky; top: 0; z-index: 10; }
+        tr:hover { background-color: #f9f9f9; }
+        tfoot tr { background-color: #eef5fc; font-weight: bold; }
+
+        .back-btn { background: #1f4e79; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 12px; }
+        .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .date-badge { background: #1f4e79; color: white; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.8rem; }
+        .history-picker { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+        body[dir="rtl"] table { text-align: right; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 data-i18n="appTitle">Food Tracker</h1>
+        <button class="lang-btn" onclick="toggleLanguage()">Kurdish / کوردی</button>
+    </header>
+
+    <datalist id="foodDatalist"></datalist>
+
+    <!-- LOGIN PAGE -->
+    <div class="card" id="loginPage">
+        <h2 data-i18n="loginTitle">Login</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginUsername" data-i18n="username">Username</label>
+                <input type="text" id="loginUsername" required placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword" data-i18n="password">Password</label>
+                <input type="password" id="loginPassword" required placeholder="Enter password">
+            </div>
+            <button type="submit" class="btn btn-primary" data-i18n="loginBtn">Login</button>
+        </form>
+        <span class="toggle-link" onclick="showPage('signupPage')" data-i18n="gotoSignup">Sign Up</span>
+        <div class="message" id="loginMsg"></div>
+    </div>
+
+    <!-- SIGNUP PAGE -->
+    <div class="card" id="signupPage" style="display: none;">
+        <h2 data-i18n="signupTitle">Sign Up</h2>
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="signupUsername" data-i18n="username">Username</label>
+                <input type="text" id="signupUsername" required placeholder="Choose username">
+            </div>
+            <div class="form-group">
+                <label for="signupPassword" data-i18n="password">Password</label>
+                <input type="password" id="signupPassword" required placeholder="Choose password">
+            </div>
+            <button type="submit" class="btn btn-success" data-i18n="saveBtn">Save</button>
+        </form>
+        <span class="toggle-link" onclick="showPage('loginPage')" data-i18n="gotoLogin">Already have an account? Login</span>
+        <div class="message" id="signupMsg"></div>
+    </div>
+
+    <!-- MAIN TRACKER PAGE -->
+    <div class="card wide" id="dailyTrackerPage" style="display: none;">
+        <div class="user-header">
+            <div>
+                <span class="user-badge"><span data-i18n="userLabel">User</span>: <span class="activeUserSpan"></span></span>
+            </div>
+            <div class="btn-group-right">
+                <button class="nav-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="showPage('listOfFoodPage')" data-i18n="navFoodList">Food DB</button>
+                <button id="adminPortalBtn" class="admin-nav-btn" style="display:none;" onclick="showPage('adminPage')">Admin</button>
+                <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn">Logout</button>
+            </div>
+        </div>
+        
+        <div class="tracker-header">
+            <h2 data-i18n="dailyTrackerTitle">Daily Food Tracker</h2>
+            <div class="date-badge" id="currentDateDisplay">Date: --</div>
+        </div>
+
+        <!-- MACRO PROGRESS BARS -->
+        <div class="progress-section">
+            <div class="progress-bar-group">
+                <div class="progress-header">
+                    <span><span data-i18n="calories">Calories</span>: <span id="barCalText">0 / 2000 kcal</span></span>
+                    <span id="barCalPct">0%</span>
+                </div>
+                <div class="progress-bg"><div class="progress-fill cal-fill" id="barCalFill"></div></div>
+            </div>
+            <div class="progress-bar-group">
+                <div class="progress-header">
+                    <span><span data-i18n="protein">Protein</span>: <span id="barProtText">0 / 140g</span></span>
+                    <span id="barProtPct">0%</span>
+                </div>
+                <div class="progress-bg"><div class="progress-fill protein-fill" id="barProtFill"></div></div>
+            </div>
+            <div class="progress-bar-group">
+                <div class="progress-header">
+                    <span><span data-i18n="carb">Carb</span>: <span id="barCarbText">0 / 225g</span></span>
+                    <span id="barCarbPct">0%</span>
+                </div>
+                <div class="progress-bg"><div class="progress-fill carb-fill" id="barCarbFill"></div></div>
+            </div>
+        </div>
+
+        <div class="history-picker">
+            <label for="historyDateSelect" data-i18n="viewHistory">View Date:</label>
+            <input type="date" id="historyDateSelect" onchange="changeTrackerDateView()">
+        </div>
+
+        <div class="content-box" id="trackerInputArea">
+            <!-- QUICK ADD CHIPS -->
+            <div class="quick-chips-title" data-i18n="quickAddTitle">⚡ Quick Add Favorites:</div>
+            <div class="quick-chips-container" id="quickChips"></div>
+
+            <!-- BARCODE SCANNER LAUNCHER -->
+            <button type="button" class="btn btn-scanner" onclick="toggleBarcodeScanner()" data-i18n="scanBtn">📷 Scan Barcode with Camera</button>
+            
+            <div id="scannerContainer">
+                <div id="qr-reader" style="width: 100%;"></div>
+                <button type="button" class="btn logout-btn" style="margin-top:8px;" onclick="stopBarcodeScanner()">Close Scanner</button>
+            </div>
+
+            <div class="form-group">
+                <label for="trackerFoodInput" data-i18n="foodNameLabel">Food Name</label>
+                <input type="text" id="trackerFoodInput" list="foodDatalist" placeholder="Type or search food name...">
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="portionLabel">Portion / Weight</label>
+                <div class="portion-grid">
+                    <input type="number" id="trackerFoodWeight" placeholder="Enter quantity">
+                    <select id="trackerFoodUnit">
+                        <option value="1">Grams (g)</option>
+                        <option value="15">Spoon (~15g)</option>
+                        <option value="240">Cup/Bowl (~240g)</option>
+                        <option value="120">Piece (~120g)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="addFoodToDailyLog()" data-i18n="addBtn">Add to Daily Log</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 35px;">#</th>
+                        <th data-i18n="food">Food</th>
+                        <th data-i18n="weight">Weight</th>
+                        <th data-i18n="protein">Protein</th>
+                        <th data-i18n="carb">Carb</th>
+                        <th data-i18n="calories">Calories</th>
+                        <th data-i18n="timeAdded">Time</th>
+                        <th style="width: 45px;" data-i18n="action">Del</th>
+                    </tr>
+                </thead>
+                <tbody id="trackerTableBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" data-i18n="total">Total</td>
+                        <td id="totalWeight">0g</td>
+                        <td id="totalProtein">0g</td>
+                        <td id="totalCarb">0g</td>
+                        <td id="totalCal">0</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGE: LIST OF FOOD -->
+    <div class="card wide" id="listOfFoodPage" style="display: none;">
+        <button class="back-btn" onclick="showPage('dailyTrackerPage')" data-i18n="backBtn">&larr; Back to Tracker</button>
+        <h2><span data-i18n="foodDbTitle">Food Database</span> (<span id="recordCount">0</span>)</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="thNameEn">Food Name (English)</th>
+                        <th data-i18n="thNameKu">ناوی خۆراک (کوردی)</th>
+                        <th data-i18n="thCal">Cal (100g)</th>
+                        <th data-i18n="thCarb">Carb (100g)</th>
+                        <th data-i18n="thProt">Protein (100g)</th>
+                    </tr>
+                </thead>
+                <tbody id="foodTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAGE: ADMIN USER APPROVAL -->
+    <div class="card wide" id="adminPage" style="display: none;">
+        <button class="back-btn" onclick="showPage('dailyTrackerPage')">&larr; Back to Tracker</button>
+        <h2>Admin Portal: Pending Approvals</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Approved Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adminUserTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://xmxcxkinfzvfhhkqquib.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhteGN4a2luZnp2Zmhoa3FxdWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNDE2MDEsImV4cCI6MjEwNDcxNzYwMX0.DmIpGkOL4uXgw6R_3xLbhakXswTzz22hUFdz8aSXfew";
+
+        const EMAILJS_SERVICE_ID = "service_1sfshqh";
+        const EMAILJS_TEMPLATE_ID = "template_jtg0y6r";
+        const EMAILJS_PUBLIC_KEY = "Y9YX8JMUBxs2KrHDi";
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+            emailjs.init(EMAILJS_PUBLIC_KEY);
+        }
+
+        const GOALS = { cal: 2000, protein: 140, carb: 225 };
+        let currentUser = null;
+        let currentUserIsAdmin = false;
+        let selectedTrackerDate = new Date().toISOString().split('T')[0];
+
+        // Barcode-to-Food Mapping Database
+        const barcodeDirectory = {
+            "0123456789012": "Mast Kurdish (Kurdish Yogurt)",
+            "5000112637922": "Cooked Oatmeal",
+            "5449000000996": "Kurdish Tea (Cha)",
+            "8690504018087": "Kalane (Kurdish Wild Leek Bread)"
+        };
+
+        const foodDatabase = [
+            {en: "Biryani Kurdish", ku: "بریانی کوردی", p: 8.5, c: 24, cal: 185},
+            {en: "Yaprax / Dolma Kurdish", ku: "یاپراخ / دۆڵمەی کوردی", p: 4.5, c: 18, cal: 145},
+            {en: "Kifte Kurdish (Stuffed)", ku: "کفتەی کوردی", p: 12, c: 15, cal: 210},
+            {en: "Shorba Nisk (Lentil Soup)", ku: "شۆربای نیسک", p: 6.5, c: 14, cal: 95},
+            {en: "Tashrib Lamb", ku: "تەشریبی گۆشتی مەڕ", p: 15, c: 10, cal: 230},
+            {en: "Kebab Erbil / Kurdish Kebab", ku: "کەبابی کوردی / هەولێر", p: 18, c: 2, cal: 260},
+            {en: "Kalane (Kurdish Wild Leek Bread)", ku: "کەلێنە / کەڵانە", p: 6, c: 38, cal: 220},
+            {en: "Mast Kurdish (Kurdish Yogurt)", ku: "مەستی کوردی", p: 3.8, c: 4.7, cal: 68},
+            {en: "Panir Kurdish (Kurdish Cheese)", ku: "پەنێری کوردی", p: 18, c: 2, cal: 265},
+            {en: "Kurdish Tea (Cha)", ku: "چای کوردی", p: 0.1, c: 0.2, cal: 2},
+            {en: "Grilled Chicken Breast", ku: "برژاو سنگی مریشک", p: 31, c: 3.6, cal: 165},
+            {en: "Boiled White Rice", ku: "کوڵاو برنجی سپی", p: 2.7, c: 28, cal: 130},
+            {en: "Cooked Oatmeal", ku: "لێنراو شۆفان", p: 2.5, c: 12, cal: 71},
+            {en: "Apple (Red Delicious)", ku: "سێو (Red Delicious)", p: 0.3, c: 13.8, cal: 52},
+            {en: "Banana (Ripe)", ku: "مۆز (Ripe)", p: 1.1, c: 22.8, cal: 89}
+        ];
+
+        const favoriteFoods = ["Kalane (Kurdish Wild Leek Bread)", "Grilled Chicken Breast", "Yaprax / Dolma Kurdish", "Kurdish Tea (Cha)", "Boiled White Rice"];
+
+        // Translations Dictionary
+        let currentLang = 'en';
+        const translations = {
+            en: {
+                appTitle: "Food Tracker Pro",
+                username: "Username",
+                password: "Password",
+                loginBtn: "Login",
+                loginTitle: "Login",
+                gotoSignup: "Sign Up",
+                signupTitle: "Sign Up",
+                saveBtn: "Save",
+                gotoLogin: "Already have an account? Login",
+                userLabel: "User",
+                logoutBtn: "Logout",
+                navFoodList: "Food DB",
+                dailyTrackerTitle: "Daily Food Tracker",
+                viewHistory: "View Date:",
+                quickAddTitle: "⚡ Quick Add Favorites:",
+                scanBtn: "📷 Scan Barcode with Camera",
+                foodNameLabel: "Food Name",
+                portionLabel: "Portion / Weight",
+                addBtn: "Add to Daily Log",
+                calories: "Calories",
+                carb: "Carb",
+                protein: "Protein",
+                food: "Food",
+                weight: "Weight",
+                timeAdded: "Time",
+                action: "Del",
+                total: "Total",
+                backBtn: "← Back",
+                foodDbTitle: "Food Database",
+                thNameEn: "Food Name (English)",
+                thNameKu: "ناوی خۆراک (کوردی)",
+                thCal: "Cal (100g)",
+                thCarb: "Carb (100g)",
+                thProt: "Protein (100g)"
+            },
+            ku: {
+                appTitle: "تۆمارکەری خۆراک پڕۆ",
+                username: "ناوی بەکارهێنەر",
+                password: "وشەی تێپەڕ",
+                loginBtn: "چوونە ژوورەوە",
+                loginTitle: "چوونە ژوورەوە",
+                gotoSignup: "دروستکردنی هەژمار",
+                signupTitle: "دروستکردنی هەژمار",
+                saveBtn: "پاشەکەوتکردن",
+                gotoLogin: "هەژمارت هەیە؟ بچۆ ژوورەوە",
+                userLabel: "بەکارهێنەر",
+                logoutBtn: "دەرچوون",
+                navFoodList: "داتابەیس",
+                dailyTrackerTitle: "تۆماری ڕۆژانەی خۆراک",
+                viewHistory: "بینینی بەروار:",
+                quickAddTitle: "⚡ خۆراکە دڵخوازەکان:",
+                scanBtn: "📷 خوێندنەوەی بارکۆد بە کامێرا",
+                foodNameLabel: "ناوی خۆراک",
+                portionLabel: "بڕ / کێش",
+                addBtn: "تۆمارکردن لە ڕۆژانەدا",
+                calories: "کالۆری",
+                carb: "کاربۆهیدرات",
+                protein: "پڕۆتین",
+                food: "خۆراک",
+                weight: "کێش",
+                timeAdded: "کات",
+                action: "سڕینەوە",
+                total: "کۆی گشتی",
+                backBtn: "← گەڕانەوە",
+                foodDbTitle: "داتابەیسی خۆراکەکان",
+                thNameEn: "ناوی خۆراک (ئینگلیزی)",
+                thNameKu: "ناوی خۆراک (کوردی)",
+                thCal: "کالۆری (١٠٠گم)",
+                thCarb: "کارب (١٠٠گم)",
+                thProt: "پڕۆتین (١٠٠گم)"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ku' : 'en';
+            document.body.dir = currentLang === 'ku' ? 'rtl' : 'ltr';
+            document.querySelector('.lang-btn').innerText = currentLang === 'en' ? 'Kurdish / کوردی' : 'English / ئینگلیزی';
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+            renderQuickChips();
+        }
+
+        function populateFoodDatalist() {
+            const datalist = document.getElementById('foodDatalist');
+            datalist.innerHTML = '';
+            foodDatabase.forEach(food => {
+                const opt = document.createElement('option');
+                opt.value = `${food.en} (${food.ku})`;
+                datalist.appendChild(opt);
+            });
+        }
+
+        function renderQuickChips() {
+            const container = document.getElementById('quickChips');
+            container.innerHTML = '';
+            favoriteFoods.forEach(name => {
+                const item = foodDatabase.find(f => f.en === name);
+                if (!item) return;
+                const chip = document.createElement('div');
+                chip.className = 'quick-chip';
+                chip.innerText = currentLang === 'ku' ? item.ku : item.en;
+                chip.onclick = () => {
+                    document.getElementById('trackerFoodInput').value = `${item.en} (${item.ku})`;
+                    document.getElementById('trackerFoodWeight').value = '100';
+                };
+                container.appendChild(chip);
+            });
+        }
+
+        function findFoodByInput(val) {
+            if (!val) return null;
+            const cleaned = val.trim().toLowerCase();
+            return foodDatabase.find(food => {
+                const disp = `${food.en} (${food.ku})`.toLowerCase();
+                return disp === cleaned || food.en.toLowerCase() === cleaned || food.ku.toLowerCase() === cleaned;
+            });
+        }
+
+        function showPage(pageId) {
+            ['loginPage', 'signupPage', 'dailyTrackerPage', 'listOfFoodPage', 'adminPage'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            document.getElementById(pageId).style.display = 'block';
+            document.querySelectorAll('.activeUserSpan').forEach(el => el.innerText = currentUser || '');
+
+            if (pageId === 'dailyTrackerPage') {
+                initTrackerPage();
+            } else if (pageId === 'adminPage') {
+                loadAdminUsers();
+            } else if (pageId === 'listOfFoodPage') {
+                renderFoodDatabaseTable();
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            currentUserIsAdmin = false;
+            document.getElementById('loginForm').reset();
+            showPage('loginPage');
+        }
+
+        /* --- AUTHENTICATION FLOW (SUPABASE) --- */
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+
+            const { data: existingUser } = await supabaseClient
+                .from('profiles')
+                .select('username')
+                .eq('username', username)
+                .maybeSingle();
+
+            if (existingUser) {
+                document.getElementById('signupMsg').style.color = 'red';
+                document.getElementById('signupMsg').innerText = 'Username already exists!';
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .insert([{ username, password, approved: false, is_admin: false }]);
+
+            if (error) {
+                document.getElementById('signupMsg').style.color = 'red';
+                document.getElementById('signupMsg').innerText = 'Error creating account!';
+                return;
+            }
+
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                to_email: "redenmax12@gmail.com",
+                username: username
+            });
+
+            document.getElementById('signupMsg').style.color = 'orange';
+            document.getElementById('signupMsg').innerText = 'Registration requested! Admin approval required.';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            const { data: user, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', username)
+                .eq('password', password)
+                .maybeSingle();
+
+            if (error || !user) {
+                document.getElementById('loginMsg').style.color = 'red';
+                document.getElementById('loginMsg').innerText = 'Invalid username or password!';
+                return;
+            }
+
+            if (!user.approved) {
+                document.getElementById('loginMsg').style.color = 'orange';
+                document.getElementById('loginMsg').innerText = 'Your account is pending admin approval!';
+                return;
+            }
+
+            currentUser = user.username;
+            currentUserIsAdmin = !!user.is_admin;
+            document.getElementById('adminPortalBtn').style.display = currentUserIsAdmin ? 'inline-block' : 'none';
+
+            showPage('dailyTrackerPage');
+        });
+
+        /* --- SUPABASE CLOUD FOOD LOGS --- */
+        async function initTrackerPage() {
+            document.getElementById('historyDateSelect').value = selectedTrackerDate;
+            document.getElementById('currentDateDisplay').innerText = `Date: ${selectedTrackerDate}`;
+            renderQuickChips();
+            await fetchAndRenderCloudLogs();
+        }
+
+        async function changeTrackerDateView() {
+            selectedTrackerDate = document.getElementById('historyDateSelect').value;
+            document.getElementById('currentDateDisplay').innerText = `Date: ${selectedTrackerDate}`;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('trackerInputArea').style.display = selectedTrackerDate !== today ? 'none' : 'block';
+            await fetchAndRenderCloudLogs();
+        }
+
+        async function fetchAndRenderCloudLogs() {
+            const tbody = document.getElementById('trackerTableBody');
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading cloud records...</td></tr>';
+
+            const { data: logs, error } = await supabaseClient
+                .from('food_logs')
+                .select('*')
+                .eq('username', currentUser)
+                .eq('date', selectedTrackerDate)
+                .order('id', { ascending: true });
+
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="8" style="color:red;text-align:center;">Failed to sync with Supabase</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            let totW = 0, totP = 0, totC = 0, totCal = 0;
+            const today = new Date().toISOString().split('T')[0];
+
+            (logs || []).forEach((entry, idx) => {
+                totW += Number(entry.weight);
+                totP += Number(entry.protein);
+                totC += Number(entry.carb);
+                totCal += Number(entry.calories);
+
+                const tr = document.createElement('tr');
+                const delBtn = selectedTrackerDate === today
+                    ? `<button style="background:red; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;" onclick="deleteCloudLog(${entry.id})">X</button>`
+                    : '-';
+
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td><strong>${entry.name}</strong></td>
+                    <td>${entry.weight}g</td>
+                    <td>${entry.protein}g</td>
+                    <td>${entry.carb}g</td>
+                    <td>${entry.calories}</td>
+                    <td>${entry.time}</td>
+                    <td>${delBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('totalWeight').innerText = `${totW.toFixed(1)}g`;
+            document.getElementById('totalProtein').innerText = `${totP.toFixed(1)}g`;
+            document.getElementById('totalCarb').innerText = `${totC.toFixed(1)}g`;
+            document.getElementById('totalCal').innerText = totCal.toFixed(1);
+
+            updateProgressBars(totCal, totP, totC);
+        }
+
+        async function addFoodToDailyLog() {
+            const foodInputValue = document.getElementById('trackerFoodInput').value;
+            const mult = parseFloat(document.getElementById('trackerFoodUnit').value) || 1;
+            const rawWeight = parseFloat(document.getElementById('trackerFoodWeight').value) || 0;
+            const weight = rawWeight * mult;
+
+            const item = findFoodByInput(foodInputValue);
+            if (!item || weight <= 0) {
+                alert('Please select a valid food and enter a quantity.');
+                return;
+            }
+
+            const cal = parseFloat(((item.cal / 100) * weight).toFixed(1));
+            const carb = parseFloat(((item.c / 100) * weight).toFixed(1));
+            const protein = parseFloat(((item.p / 100) * weight).toFixed(1));
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const { error } = await supabaseClient.from('food_logs').insert([{
+                username: currentUser,
+                date: selectedTrackerDate,
+                name: currentLang === 'ku' ? item.ku : item.en,
+                weight: weight,
+                calories: cal,
+                protein: protein,
+                carb: carb,
+                time: timeStr
+            }]);
+
+            if (error) {
+                alert('Cloud save error: ' + error.message);
+                return;
+            }
+
+            document.getElementById('trackerFoodWeight').value = '';
+            document.getElementById('trackerFoodInput').value = '';
+            await fetchAndRenderCloudLogs();
+        }
+
+        async function deleteCloudLog(id) {
+            const { error } = await supabaseClient.from('food_logs').delete().eq('id', id);
+            if (error) {
+                alert('Delete error: ' + error.message);
+                return;
+            }
+            await fetchAndRenderCloudLogs();
+        }
+
+        function updateProgressBars(totCal, totProt, totCarb) {
+            const calPct = Math.min(100, Math.round((totCal / GOALS.cal) * 100));
+            const protPct = Math.min(100, Math.round((totProt / GOALS.protein) * 100));
+            const carbPct = Math.min(100, Math.round((totCarb / GOALS.carb) * 100));
+
+            const calFill = document.getElementById('barCalFill');
+            calFill.style.width = calPct + '%';
+            calFill.classList.toggle('over-limit', totCal > GOALS.cal);
+            document.getElementById('barCalText').innerText = `${totCal.toFixed(0)} / ${GOALS.cal} kcal`;
+            document.getElementById('barCalPct').innerText = `${Math.round((totCal / GOALS.cal) * 100)}%`;
+
+            const protFill = document.getElementById('barProtFill');
+            protFill.style.width = protPct + '%';
+            protFill.classList.toggle('over-limit', totProt > GOALS.protein);
+            document.getElementById('barProtText').innerText = `${totProt.toFixed(1)} / ${GOALS.protein}g`;
+            document.getElementById('barProtPct').innerText = `${Math.round((totProt / GOALS.protein) * 100)}%`;
+
+            const carbFill = document.getElementById('barCarbFill');
+            carbFill.style.width = carbPct + '%';
+            carbFill.classList.toggle('over-limit', totCarb > GOALS.carb);
+            document.getElementById('barCarbText').innerText = `${totCarb.toFixed(1)} / ${GOALS.carb}g`;
+            document.getElementById('barCarbPct').innerText = `${Math.round((totCarb / GOALS.carb) * 100)}%`;
+        }
+
+        /* --- BARCODE CAMERA SCANNER (html5-qrcode) --- */
+        let html5QrCode = null;
+
+        function toggleBarcodeScanner() {
+            const container = document.getElementById('scannerContainer');
+            if (container.style.display === 'block') {
+                stopBarcodeScanner();
+            } else {
+                container.style.display = 'block';
+                html5QrCode = new Html5Qrcode("qr-reader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                    onBarcodeScanned,
+                    () => {}
+                ).catch(err => {
+                    alert("Camera access denied or unavailable: " + err);
+                    stopBarcodeScanner();
+                });
+            }
+        }
+
+        function stopBarcodeScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    document.getElementById('scannerContainer').style.display = 'none';
+                }).catch(() => {
+                    document.getElementById('scannerContainer').style.display = 'none';
+                });
+            } else {
+                document.getElementById('scannerContainer').style.display = 'none';
+            }
+        }
+
+        function onBarcodeScanned(decodedText) {
+            stopBarcodeScanner();
+            const matchedFoodName = barcodeDirectory[decodedText];
+            if (matchedFoodName) {
+                const item = foodDatabase.find(f => f.en === matchedFoodName);
+                if (item) {
+                    document.getElementById('trackerFoodInput').value = `${item.en} (${item.ku})`;
+                    document.getElementById('trackerFoodWeight').value = '100';
+                    alert(`Barcode scanned: ${decodedText}\nFound: ${item.en}`);
+                    return;
+                }
+            }
+            alert(`Scanned barcode: ${decodedText}\nNot found in local database. Please select manually.`);
+        }
+
+        /* --- ADMIN DASHBOARD --- */
+        async function loadAdminUsers() {
+            const tbody = document.getElementById('adminUserTableBody');
+            tbody.innerHTML = '<tr><td colspan="3">Loading users...</td></tr>';
+
+            const { data: users, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .order('username', { ascending: true });
+
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="3" style="color:red;">Error: ${error.message}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const actionBtn = !u.approved
+                    ? `<button class="btn btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="approveUser('${u.username}')">Approve</button>`
+                    : '<span style="color:green;font-weight:bold;">Approved</span>';
+
+                tr.innerHTML = `
+                    <td><strong>${u.username}</strong></td>
+                    <td>${u.approved ? 'Active' : '<span style="color:orange;">Pending</span>'}</td>
+                    <td>${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function approveUser(userToApprove) {
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({ approved: true })
+                .eq('username', userToApprove);
+
+            if (error) {
+                alert("Failed to approve user: " + error.message);
+                return;
+            }
+            loadAdminUsers();
+        }
+
+        /* --- FOOD DATABASE VIEW --- */
+        function renderFoodDatabaseTable() {
+            const tbody = document.getElementById('foodTableBody');
+            tbody.innerHTML = '';
+            document.getElementById('recordCount').innerText = foodDatabase.length;
+
+            foodDatabase.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${item.en}</strong></td>
+                    <td dir="rtl">${item.ku}</td>
+                    <td>${item.cal}</td>
+                    <td>${item.c}g</td>
+                    <td>${item.p}g</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize autocompletes & initial date
+        populateFoodDatalist();
+        document.getElementById('historyDateSelect').value = selectedTrackerDate;
+
+        // Register Service Worker for PWA Offline Capability
+        if ('serviceWorker' in navigator) {
+            const swBlob = new Blob([`
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+            `], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+        }
+    </script>
+</body>
+</html>
