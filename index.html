@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Tracker Pro</title>
+    <title>Food Tracker Beast</title>
     
-    <!-- PWA Mobile Meta Tags & Embedded Web Manifest -->
     <meta name="theme-color" content="#1f4e79">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Food Tracker Pro","short_name":"FoodTracker","start_url":".","display":"standalone","background_color":"#f4f7f6","theme_color":"#1f4e79","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1046/1046784.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Food Tracker Beast","short_name":"FoodTracker","start_url":".","display":"standalone","background_color":"#f4f7f6","theme_color":"#1f4e79","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1046/1046784.png","sizes":"512x512","type":"image/png"}]}'>
 
-    <!-- SDKs: EmailJS, Supabase, and html5-qrcode for barcode scanning -->
+    <!-- SDKs: EmailJS, Supabase, html5-qrcode, and Chart.js -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; padding: 15px; }
+        body { background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; padding: 12px; }
         
-        header { text-align: center; margin-bottom: 15px; width: 100%; max-width: 850px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { color: #1f4e79; font-size: 1.8rem; }
+        header { text-align: center; margin-bottom: 12px; width: 100%; max-width: 850px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { color: #1f4e79; font-size: 1.8rem; font-weight: 800; }
 
-        .lang-btn { background: #1f4e79; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        .lang-btn { background: #1f4e79; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
 
         .card { background: white; width: 440px; max-width: 95vw; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #ddd; position: relative; }
         .card.wide { width: 850px; max-width: 95vw; }
@@ -31,69 +31,74 @@
 
         .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .user-badge { font-weight: bold; color: #1f4e79; }
-        .btn-group-right { display: flex; gap: 6px; }
-        .logout-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
-        .admin-nav-btn { background: #d35400; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+        .btn-group-right { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-sm { padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; color: white; }
+        .logout-btn { background: #e74c3c; }
+        .admin-nav-btn { background: #d35400; }
+        .goals-btn { background: #2980b9; }
+        .custom-food-btn { background: #16a085; }
 
         .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.9rem; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 0.95rem; }
-        .portion-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.85rem; }
+        .form-group input, .form-group select { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 6px; outline: none; font-size: 0.95rem; }
+        .portion-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
 
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .btn-primary { background-color: #1f4e79; color: white; }
         .btn-primary:hover { background-color: #153452; }
         .btn-success { background-color: #27ae60; color: white; }
-        .btn-scanner { background-color: #8e44ad; color: white; margin-bottom: 12px; }
+        .btn-scanner { background-color: #8e44ad; color: white; margin-bottom: 10px; }
 
         .toggle-link { display: block; text-align: center; margin-top: 15px; color: #1f4e79; text-decoration: none; font-weight: bold; cursor: pointer; }
         .message { text-align: center; margin-top: 10px; font-size: 0.9rem; }
 
-        .nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; }
-        .nav-btn { flex: 1; padding: 10px; background: #e0e0e0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; color: #333; text-align: center; }
+        .content-box { border: 1px solid #aaa; border-radius: 8px; padding: 12px; margin-bottom: 15px; background: #fff; }
 
-        .content-box { border: 1px solid #aaa; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #fff; }
-
-        /* Quick Add Chips */
-        .quick-chips-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #555; }
+        .quick-chips-title { font-size: 0.8rem; font-weight: bold; margin-bottom: 6px; color: #555; }
         .quick-chips-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-        .quick-chip { background: #eef5fc; border: 1px solid #bcd8f1; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; color: #1f4e79; font-weight: bold; }
+        .quick-chip { background: #eef5fc; border: 1px solid #bcd8f1; padding: 3px 8px; border-radius: 12px; font-size: 0.78rem; cursor: pointer; color: #1f4e79; font-weight: bold; }
         .quick-chip:hover { background: #d7e8fa; }
 
-        /* Camera Scanner Modal Container */
         #scannerContainer { display: none; margin-bottom: 12px; border: 2px dashed #8e44ad; border-radius: 8px; padding: 8px; background: #fafafa; }
 
-        /* Macro Progress Bars */
-        .progress-section { margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
-        .progress-bar-group { margin-bottom: 10px; }
+        /* Chart & Macros Grid */
+        .analytics-grid { display: grid; grid-template-columns: 1fr 140px; gap: 15px; align-items: center; margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        .progress-bar-group { margin-bottom: 8px; }
         .progress-bar-group:last-child { margin-bottom: 0; }
-        .progress-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
-        .progress-bg { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: bold; margin-bottom: 3px; }
+        .progress-bg { width: 100%; height: 9px; background: #e0e0e0; border-radius: 5px; overflow: hidden; }
         .progress-fill { height: 100%; width: 0%; transition: width 0.3s ease; }
         .cal-fill { background-color: #e67e22; }
         .protein-fill { background-color: #2980b9; }
         .carb-fill { background-color: #27ae60; }
         .over-limit { background-color: #e74c3c !important; }
 
-        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; }
+        .table-container { max-height: 380px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
-        th, td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+        th, td { padding: 7px 9px; border-bottom: 1px solid #eee; }
         th { background: #1f4e79; color: white; position: sticky; top: 0; z-index: 10; }
         tr:hover { background-color: #f9f9f9; }
         tfoot tr { background-color: #eef5fc; font-weight: bold; }
 
-        .back-btn { background: #1f4e79; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 12px; }
-        .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .date-badge { background: #1f4e79; color: white; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.8rem; }
-        .history-picker { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .date-badge { background: #1f4e79; color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 0.8rem; }
+        
+        .controls-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .export-btn { background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+        .back-btn { background: #1f4e79; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 12px; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 360px; max-width: 90vw; }
 
         body[dir="rtl"] table { text-align: right; }
+        @media(max-width: 600px) { .analytics-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
     <header>
-        <h1 data-i18n="appTitle">Food Tracker</h1>
+        <h1 data-i18n="appTitle">Food Tracker Beast</h1>
         <button class="lang-btn" onclick="toggleLanguage()">Kurdish / کوردی</button>
     </header>
 
@@ -142,9 +147,10 @@
                 <span class="user-badge"><span data-i18n="userLabel">User</span>: <span class="activeUserSpan"></span></span>
             </div>
             <div class="btn-group-right">
-                <button class="nav-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="showPage('listOfFoodPage')" data-i18n="navFoodList">Food DB</button>
-                <button id="adminPortalBtn" class="admin-nav-btn" style="display:none;" onclick="showPage('adminPage')">Admin</button>
-                <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn">Logout</button>
+                <button class="btn-sm goals-btn" onclick="openGoalsModal()">🎯 Goals</button>
+                <button class="btn-sm custom-food-btn" onclick="openCustomFoodModal()">➕ Custom Dish</button>
+                <button id="adminPortalBtn" class="btn-sm admin-nav-btn" style="display:none;" onclick="showPage('adminPage')">Admin</button>
+                <button class="btn-sm logout-btn" onclick="logout()" data-i18n="logoutBtn">Logout</button>
             </div>
         </div>
         
@@ -153,43 +159,49 @@
             <div class="date-badge" id="currentDateDisplay">Date: --</div>
         </div>
 
-        <!-- MACRO PROGRESS BARS -->
-        <div class="progress-section">
-            <div class="progress-bar-group">
-                <div class="progress-header">
-                    <span><span data-i18n="calories">Calories</span>: <span id="barCalText">0 / 2000 kcal</span></span>
-                    <span id="barCalPct">0%</span>
+        <!-- MACRO ANALYTICS: PROGRESS BARS + DONUT CHART -->
+        <div class="analytics-grid">
+            <div class="progress-section">
+                <div class="progress-bar-group">
+                    <div class="progress-header">
+                        <span><span data-i18n="calories">Calories</span>: <span id="barCalText">0 / 2000 kcal</span></span>
+                        <span id="barCalPct">0%</span>
+                    </div>
+                    <div class="progress-bg"><div class="progress-fill cal-fill" id="barCalFill"></div></div>
                 </div>
-                <div class="progress-bg"><div class="progress-fill cal-fill" id="barCalFill"></div></div>
+                <div class="progress-bar-group">
+                    <div class="progress-header">
+                        <span><span data-i18n="protein">Protein</span>: <span id="barProtText">0 / 140g</span></span>
+                        <span id="barProtPct">0%</span>
+                    </div>
+                    <div class="progress-bg"><div class="progress-fill protein-fill" id="barProtFill"></div></div>
+                </div>
+                <div class="progress-bar-group">
+                    <div class="progress-header">
+                        <span><span data-i18n="carb">Carb</span>: <span id="barCarbText">0 / 225g</span></span>
+                        <span id="barCarbPct">0%</span>
+                    </div>
+                    <div class="progress-bg"><div class="progress-fill carb-fill" id="barCarbFill"></div></div>
+                </div>
             </div>
-            <div class="progress-bar-group">
-                <div class="progress-header">
-                    <span><span data-i18n="protein">Protein</span>: <span id="barProtText">0 / 140g</span></span>
-                    <span id="barProtPct">0%</span>
-                </div>
-                <div class="progress-bg"><div class="progress-fill protein-fill" id="barProtFill"></div></div>
-            </div>
-            <div class="progress-bar-group">
-                <div class="progress-header">
-                    <span><span data-i18n="carb">Carb</span>: <span id="barCarbText">0 / 225g</span></span>
-                    <span id="barCarbPct">0%</span>
-                </div>
-                <div class="progress-bg"><div class="progress-fill carb-fill" id="barCarbFill"></div></div>
+            <div style="height: 120px; position: relative;">
+                <canvas id="macroChart"></canvas>
             </div>
         </div>
 
-        <div class="history-picker">
-            <label for="historyDateSelect" data-i18n="viewHistory">View Date:</label>
-            <input type="date" id="historyDateSelect" onchange="changeTrackerDateView()">
+        <div class="controls-toolbar">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label for="historyDateSelect" data-i18n="viewHistory" style="font-size:0.85rem; font-weight:bold;">Date:</label>
+                <input type="date" id="historyDateSelect" onchange="changeTrackerDateView()" style="padding:4px 8px; border-radius:4px; border:1px solid #ccc;">
+            </div>
+            <button class="export-btn" onclick="exportToCSV()">📥 Export to Excel</button>
         </div>
 
         <div class="content-box" id="trackerInputArea">
-            <!-- QUICK ADD CHIPS -->
-            <div class="quick-chips-title" data-i18n="quickAddTitle">⚡ Quick Add Favorites:</div>
+            <div class="quick-chips-title" data-i18n="quickAddTitle">⚡ Quick Add Kurdish Staples:</div>
             <div class="quick-chips-container" id="quickChips"></div>
 
-            <!-- BARCODE SCANNER LAUNCHER -->
-            <button type="button" class="btn btn-scanner" onclick="toggleBarcodeScanner()" data-i18n="scanBtn">📷 Scan Barcode with Camera</button>
+            <button type="button" class="btn btn-scanner" onclick="toggleBarcodeScanner()" data-i18n="scanBtn">📷 Scan Any Supermarket Barcode</button>
             
             <div id="scannerContainer">
                 <div id="qr-reader" style="width: 100%;"></div>
@@ -204,7 +216,7 @@
             <div class="form-group">
                 <label data-i18n="portionLabel">Portion / Weight</label>
                 <div class="portion-grid">
-                    <input type="number" id="trackerFoodWeight" placeholder="Enter quantity">
+                    <input type="number" id="trackerFoodWeight" placeholder="Quantity">
                     <select id="trackerFoodUnit">
                         <option value="1">Grams (g)</option>
                         <option value="15">Spoon (~15g)</option>
@@ -221,14 +233,14 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 35px;">#</th>
+                        <th style="width: 30px;">#</th>
                         <th data-i18n="food">Food</th>
                         <th data-i18n="weight">Weight</th>
                         <th data-i18n="protein">Protein</th>
                         <th data-i18n="carb">Carb</th>
-                        <th data-i18n="calories">Calories</th>
+                        <th data-i18n="calories">Cal</th>
                         <th data-i18n="timeAdded">Time</th>
-                        <th style="width: 45px;" data-i18n="action">Del</th>
+                        <th style="width: 35px;" data-i18n="action">Del</th>
                     </tr>
                 </thead>
                 <tbody id="trackerTableBody"></tbody>
@@ -246,26 +258,6 @@
         </div>
     </div>
 
-    <!-- PAGE: LIST OF FOOD -->
-    <div class="card wide" id="listOfFoodPage" style="display: none;">
-        <button class="back-btn" onclick="showPage('dailyTrackerPage')" data-i18n="backBtn">&larr; Back to Tracker</button>
-        <h2><span data-i18n="foodDbTitle">Food Database</span> (<span id="recordCount">0</span>)</h2>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th data-i18n="thNameEn">Food Name (English)</th>
-                        <th data-i18n="thNameKu">ناوی خۆراک (کوردی)</th>
-                        <th data-i18n="thCal">Cal (100g)</th>
-                        <th data-i18n="thCarb">Carb (100g)</th>
-                        <th data-i18n="thProt">Protein (100g)</th>
-                    </tr>
-                </thead>
-                <tbody id="foodTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
     <!-- PAGE: ADMIN USER APPROVAL -->
     <div class="card wide" id="adminPage" style="display: none;">
         <button class="back-btn" onclick="showPage('dailyTrackerPage')">&larr; Back to Tracker</button>
@@ -275,7 +267,7 @@
                 <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Approved Status</th>
+                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -284,7 +276,100 @@
         </div>
     </div>
 
+    <!-- MODAL 1: GOALS CONFIGURATION -->
+    <div class="modal" id="goalsModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:12px; color:#1f4e79;">🎯 Set Daily Targets</h3>
+            <div class="form-group">
+                <label>Daily Calorie Target (kcal):</label>
+                <input type="number" id="goalCalInput" placeholder="2000">
+            </div>
+            <div class="form-group">
+                <label>Daily Protein Target (g):</label>
+                <input type="number" id="goalProteinInput" placeholder="140">
+            </div>
+            <div class="form-group">
+                <label>Daily Carb Target (g):</label>
+                <input type="number" id="goalCarbInput" placeholder="225">
+            </div>
+            <button class="btn btn-primary" onclick="saveUserGoals()">Save Targets</button>
+            <button class="btn logout-btn" style="margin-top:6px;" onclick="closeModal('goalsModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CUSTOM FOOD CREATOR -->
+    <div class="modal" id="customFoodModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:12px; color:#16a085;">➕ Add Custom Recipe / Dish</h3>
+            <div class="form-group">
+                <label>Dish Name:</label>
+                <input type="text" id="custNameInput" placeholder="e.g. My Grandma Stew">
+            </div>
+            <div class="form-group">
+                <label>Calories per 100g:</label>
+                <input type="number" id="custCalInput" placeholder="150">
+            </div>
+            <div class="form-group">
+                <label>Protein per 100g (g):</label>
+                <input type="number" id="custProtInput" placeholder="10">
+            </div>
+            <div class="form-group">
+                <label>Carb per 100g (g):</label>
+                <input type="number" id="custCarbInput" placeholder="15">
+            </div>
+            <button class="btn btn-success" onclick="saveCustomDish()">Save to My Database</button>
+            <button class="btn logout-btn" style="margin-top:6px;" onclick="closeModal('customFoodModal')">Cancel</button>
+        </div>
+    </div>
+
     <script>
+        // =========================================================================
+        // FULLY AUTOMATIC UPDATE ENGINE (NO MANUAL VERSION NUMBERS NEEDED)
+        // Automatically queries GitHub's commits API to detect any new push
+        // =========================================================================
+        const GITHUB_REPO = "redenmax12-sketch/food-tracker";
+
+        async function checkAutoUpdate() {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/commits/main`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' },
+                    cache: 'no-store'
+                });
+
+                if (!res.ok) return;
+
+                const data = await res.json();
+                const latestCommitSha = data.sha;
+                const storedCommitSha = localStorage.getItem('last_installed_commit');
+
+                if (!storedCommitSha) {
+                    localStorage.setItem('last_installed_commit', latestCommitSha);
+                    return;
+                }
+
+                if (storedCommitSha !== latestCommitSha) {
+                    localStorage.setItem('last_installed_commit', latestCommitSha);
+                    
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of registrations) {
+                            await reg.unregister();
+                        }
+                    }
+
+                    window.location.reload(true);
+                }
+            } catch (e) {}
+        }
+
+        window.addEventListener('load', checkAutoUpdate);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') checkAutoUpdate();
+        });
+
+        // =========================================================================
+        // APP CONFIGURATION & CLIENTS
+        // =========================================================================
         const SUPABASE_URL = "https://xmxcxkinfzvfhhkqquib.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhteGN4a2luZnp2Zmhoa3FxdWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNDE2MDEsImV4cCI6MjEwNDcxNzYwMX0.DmIpGkOL4uXgw6R_3xLbhakXswTzz22hUFdz8aSXfew";
 
@@ -293,24 +378,16 @@
         const EMAILJS_PUBLIC_KEY = "Y9YX8JMUBxs2KrHDi";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-            emailjs.init(EMAILJS_PUBLIC_KEY);
-        }
+        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") emailjs.init(EMAILJS_PUBLIC_KEY);
 
-        const GOALS = { cal: 2000, protein: 140, carb: 225 };
+        let userGoals = { cal: 2000, protein: 140, carb: 225 };
         let currentUser = null;
         let currentUserIsAdmin = false;
         let selectedTrackerDate = new Date().toISOString().split('T')[0];
+        let currentLogs = [];
+        let macroChartInstance = null;
 
-        // Barcode-to-Food Mapping Database
-        const barcodeDirectory = {
-            "0123456789012": "Mast Kurdish (Kurdish Yogurt)",
-            "5000112637922": "Cooked Oatmeal",
-            "5449000000996": "Kurdish Tea (Cha)",
-            "8690504018087": "Kalane (Kurdish Wild Leek Bread)"
-        };
-
-        const foodDatabase = [
+        let foodDatabase = [
             {en: "Biryani Kurdish", ku: "بریانی کوردی", p: 8.5, c: 24, cal: 185},
             {en: "Yaprax / Dolma Kurdish", ku: "یاپراخ / دۆڵمەی کوردی", p: 4.5, c: 18, cal: 145},
             {en: "Kifte Kurdish (Stuffed)", ku: "کفتەی کوردی", p: 12, c: 15, cal: 210},
@@ -330,80 +407,25 @@
 
         const favoriteFoods = ["Kalane (Kurdish Wild Leek Bread)", "Grilled Chicken Breast", "Yaprax / Dolma Kurdish", "Kurdish Tea (Cha)", "Boiled White Rice"];
 
-        // Translations Dictionary
         let currentLang = 'en';
         const translations = {
             en: {
-                appTitle: "Food Tracker Pro",
-                username: "Username",
-                password: "Password",
-                loginBtn: "Login",
-                loginTitle: "Login",
-                gotoSignup: "Sign Up",
-                signupTitle: "Sign Up",
-                saveBtn: "Save",
-                gotoLogin: "Already have an account? Login",
-                userLabel: "User",
-                logoutBtn: "Logout",
-                navFoodList: "Food DB",
-                dailyTrackerTitle: "Daily Food Tracker",
-                viewHistory: "View Date:",
-                quickAddTitle: "⚡ Quick Add Favorites:",
-                scanBtn: "📷 Scan Barcode with Camera",
-                foodNameLabel: "Food Name",
-                portionLabel: "Portion / Weight",
-                addBtn: "Add to Daily Log",
-                calories: "Calories",
-                carb: "Carb",
-                protein: "Protein",
-                food: "Food",
-                weight: "Weight",
-                timeAdded: "Time",
-                action: "Del",
-                total: "Total",
-                backBtn: "← Back",
-                foodDbTitle: "Food Database",
-                thNameEn: "Food Name (English)",
-                thNameKu: "ناوی خۆراک (کوردی)",
-                thCal: "Cal (100g)",
-                thCarb: "Carb (100g)",
-                thProt: "Protein (100g)"
+                appTitle: "Food Tracker Beast", username: "Username", password: "Password", loginBtn: "Login",
+                loginTitle: "Login", gotoSignup: "Sign Up", signupTitle: "Sign Up", saveBtn: "Save",
+                gotoLogin: "Already have an account? Login", userLabel: "User", logoutBtn: "Logout",
+                dailyTrackerTitle: "Daily Food Tracker", viewHistory: "Date:", quickAddTitle: "⚡ Quick Add Kurdish Staples:",
+                scanBtn: "📷 Scan Any Supermarket Barcode", foodNameLabel: "Food Name", portionLabel: "Portion / Weight",
+                addBtn: "Add to Daily Log", calories: "Calories", carb: "Carb", protein: "Protein",
+                food: "Food", weight: "Weight", timeAdded: "Time", action: "Del", total: "Total"
             },
             ku: {
-                appTitle: "تۆمارکەری خۆراک پڕۆ",
-                username: "ناوی بەکارهێنەر",
-                password: "وشەی تێپەڕ",
-                loginBtn: "چوونە ژوورەوە",
-                loginTitle: "چوونە ژوورەوە",
-                gotoSignup: "دروستکردنی هەژمار",
-                signupTitle: "دروستکردنی هەژمار",
-                saveBtn: "پاشەکەوتکردن",
-                gotoLogin: "هەژمارت هەیە؟ بچۆ ژوورەوە",
-                userLabel: "بەکارهێنەر",
-                logoutBtn: "دەرچوون",
-                navFoodList: "داتابەیس",
-                dailyTrackerTitle: "تۆماری ڕۆژانەی خۆراک",
-                viewHistory: "بینینی بەروار:",
-                quickAddTitle: "⚡ خۆراکە دڵخوازەکان:",
-                scanBtn: "📷 خوێندنەوەی بارکۆد بە کامێرا",
-                foodNameLabel: "ناوی خۆراک",
-                portionLabel: "بڕ / کێش",
-                addBtn: "تۆمارکردن لە ڕۆژانەدا",
-                calories: "کالۆری",
-                carb: "کاربۆهیدرات",
-                protein: "پڕۆتین",
-                food: "خۆراک",
-                weight: "کێش",
-                timeAdded: "کات",
-                action: "سڕینەوە",
-                total: "کۆی گشتی",
-                backBtn: "← گەڕانەوە",
-                foodDbTitle: "داتابەیسی خۆراکەکان",
-                thNameEn: "ناوی خۆراک (ئینگلیزی)",
-                thNameKu: "ناوی خۆراک (کوردی)",
-                thCal: "کالۆری (١٠٠گم)",
-                thCarb: "کارب (١٠٠گم)",
-                thProt: "پڕۆتین (١٠٠گم)"
+                appTitle: "تۆمارکەری خۆراک پڕۆ", username: "ناوی بەکارهێنەر", password: "وشەی تێپەڕ", loginBtn: "چوونە ژوورەوە",
+                loginTitle: "چوونە ژوورەوە", gotoSignup: "دروستکردنی هەژمار", signupTitle: "دروستکردنی هەژمار", saveBtn: "پاشەکەوتکردن",
+                gotoLogin: "هەژمارت هەیە؟ بچۆ ژوورەوە", userLabel: "بەکارهێنەر", logoutBtn: "دەرچوون",
+                dailyTrackerTitle: "تۆماری ڕۆژانەی خۆراک", viewHistory: "بەروار:", quickAddTitle: "⚡ خۆراکە دڵخوازەکان:",
+                scanBtn: "📷 خوێندنەوەی بارکۆدی مارکێتەکان", foodNameLabel: "ناوی خۆراک", portionLabel: "بڕ / کێش",
+                addBtn: "تۆمارکردن لە ڕۆژانەدا", calories: "کالۆری", carb: "کاربۆهیدرات", protein: "پڕۆتین",
+                food: "خۆراک", weight: "کێش", timeAdded: "کات", action: "سڕینەوە", total: "کۆی گشتی"
             }
         };
 
@@ -411,12 +433,9 @@
             currentLang = currentLang === 'en' ? 'ku' : 'en';
             document.body.dir = currentLang === 'ku' ? 'rtl' : 'ltr';
             document.querySelector('.lang-btn').innerText = currentLang === 'en' ? 'Kurdish / کوردی' : 'English / ئینگلیزی';
-            
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (translations[currentLang][key]) {
-                    el.innerText = translations[currentLang][key];
-                }
+                if (translations[currentLang][key]) el.innerText = translations[currentLang][key];
             });
             renderQuickChips();
         }
@@ -426,7 +445,7 @@
             datalist.innerHTML = '';
             foodDatabase.forEach(food => {
                 const opt = document.createElement('option');
-                opt.value = `${food.en} (${food.ku})`;
+                opt.value = food.ku ? `${food.en} (${food.ku})` : food.en;
                 datalist.appendChild(opt);
             });
         }
@@ -439,9 +458,9 @@
                 if (!item) return;
                 const chip = document.createElement('div');
                 chip.className = 'quick-chip';
-                chip.innerText = currentLang === 'ku' ? item.ku : item.en;
+                chip.innerText = currentLang === 'ku' && item.ku ? item.ku : item.en;
                 chip.onclick = () => {
-                    document.getElementById('trackerFoodInput').value = `${item.en} (${item.ku})`;
+                    document.getElementById('trackerFoodInput').value = item.ku ? `${item.en} (${item.ku})` : item.en;
                     document.getElementById('trackerFoodWeight').value = '100';
                 };
                 container.appendChild(chip);
@@ -452,26 +471,21 @@
             if (!val) return null;
             const cleaned = val.trim().toLowerCase();
             return foodDatabase.find(food => {
-                const disp = `${food.en} (${food.ku})`.toLowerCase();
-                return disp === cleaned || food.en.toLowerCase() === cleaned || food.ku.toLowerCase() === cleaned;
+                const disp = (food.ku ? `${food.en} (${food.ku})` : food.en).toLowerCase();
+                return disp === cleaned || food.en.toLowerCase() === cleaned || (food.ku && food.ku.toLowerCase() === cleaned);
             });
         }
 
         function showPage(pageId) {
-            ['loginPage', 'signupPage', 'dailyTrackerPage', 'listOfFoodPage', 'adminPage'].forEach(id => {
+            ['loginPage', 'signupPage', 'dailyTrackerPage', 'adminPage'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
             document.getElementById(pageId).style.display = 'block';
             document.querySelectorAll('.activeUserSpan').forEach(el => el.innerText = currentUser || '');
 
-            if (pageId === 'dailyTrackerPage') {
-                initTrackerPage();
-            } else if (pageId === 'adminPage') {
-                loadAdminUsers();
-            } else if (pageId === 'listOfFoodPage') {
-                renderFoodDatabaseTable();
-            }
+            if (pageId === 'dailyTrackerPage') initTrackerPage();
+            else if (pageId === 'adminPage') loadAdminUsers();
         }
 
         function logout() {
@@ -481,39 +495,30 @@
             showPage('loginPage');
         }
 
-        /* --- AUTHENTICATION FLOW (SUPABASE) --- */
+        /* --- AUTHENTICATION FLOW --- */
         document.getElementById('signupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const username = document.getElementById('signupUsername').value.trim();
             const password = document.getElementById('signupPassword').value.trim();
 
-            const { data: existingUser } = await supabaseClient
-                .from('profiles')
-                .select('username')
-                .eq('username', username)
-                .maybeSingle();
-
+            const { data: existingUser } = await supabaseClient.from('profiles').select('username').eq('username', username).maybeSingle();
             if (existingUser) {
                 document.getElementById('signupMsg').style.color = 'red';
                 document.getElementById('signupMsg').innerText = 'Username already exists!';
                 return;
             }
 
-            const { error } = await supabaseClient
-                .from('profiles')
-                .insert([{ username, password, approved: false, is_admin: false }]);
-
+            const { error } = await supabaseClient.from('profiles').insert([{ 
+                username, password, approved: false, is_admin: false, 
+                target_cal: 2000, target_protein: 140, target_carb: 225 
+            }]);
             if (error) {
                 document.getElementById('signupMsg').style.color = 'red';
                 document.getElementById('signupMsg').innerText = 'Error creating account!';
                 return;
             }
 
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                to_email: "redenmax12@gmail.com",
-                username: username
-            });
-
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: "redenmax12@gmail.com", username: username });
             document.getElementById('signupMsg').style.color = 'orange';
             document.getElementById('signupMsg').innerText = 'Registration requested! Admin approval required.';
         });
@@ -523,13 +528,7 @@
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
 
-            const { data: user, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('username', username)
-                .eq('password', password)
-                .maybeSingle();
-
+            const { data: user, error } = await supabaseClient.from('profiles').select('*').eq('username', username).eq('password', password).maybeSingle();
             if (error || !user) {
                 document.getElementById('loginMsg').style.color = 'red';
                 document.getElementById('loginMsg').innerText = 'Invalid username or password!';
@@ -544,16 +543,22 @@
 
             currentUser = user.username;
             currentUserIsAdmin = !!user.is_admin;
+            userGoals.cal = Number(user.target_cal) || 2000;
+            userGoals.protein = Number(user.target_protein) || 140;
+            userGoals.carb = Number(user.target_carb) || 225;
+
             document.getElementById('adminPortalBtn').style.display = currentUserIsAdmin ? 'inline-block' : 'none';
 
+            await loadCustomDishes();
             showPage('dailyTrackerPage');
         });
 
-        /* --- SUPABASE CLOUD FOOD LOGS --- */
+        /* --- CLOUD FOOD LOGS & CHARTS --- */
         async function initTrackerPage() {
             document.getElementById('historyDateSelect').value = selectedTrackerDate;
             document.getElementById('currentDateDisplay').innerText = `Date: ${selectedTrackerDate}`;
             renderQuickChips();
+            initChart();
             await fetchAndRenderCloudLogs();
         }
 
@@ -567,35 +572,27 @@
 
         async function fetchAndRenderCloudLogs() {
             const tbody = document.getElementById('trackerTableBody');
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading cloud records...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Syncing with Supabase...</td></tr>';
 
-            const { data: logs, error } = await supabaseClient
-                .from('food_logs')
-                .select('*')
-                .eq('username', currentUser)
-                .eq('date', selectedTrackerDate)
-                .order('id', { ascending: true });
-
+            const { data: logs, error } = await supabaseClient.from('food_logs').select('*').eq('username', currentUser).eq('date', selectedTrackerDate).order('id', { ascending: true });
             if (error) {
-                tbody.innerHTML = '<tr><td colspan="8" style="color:red;text-align:center;">Failed to sync with Supabase</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="color:red;text-align:center;">Cloud sync error</td></tr>';
                 return;
             }
 
+            currentLogs = logs || [];
             tbody.innerHTML = '';
             let totW = 0, totP = 0, totC = 0, totCal = 0;
             const today = new Date().toISOString().split('T')[0];
 
-            (logs || []).forEach((entry, idx) => {
+            currentLogs.forEach((entry, idx) => {
                 totW += Number(entry.weight);
                 totP += Number(entry.protein);
                 totC += Number(entry.carb);
                 totCal += Number(entry.calories);
 
                 const tr = document.createElement('tr');
-                const delBtn = selectedTrackerDate === today
-                    ? `<button style="background:red; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;" onclick="deleteCloudLog(${entry.id})">X</button>`
-                    : '-';
-
+                const delBtn = selectedTrackerDate === today ? `<button style="background:red; color:white; border:none; padding:2px 5px; border-radius:3px; cursor:pointer;" onclick="deleteCloudLog(${entry.id})">X</button>` : '-';
                 tr.innerHTML = `
                     <td>${idx + 1}</td>
                     <td><strong>${entry.name}</strong></td>
@@ -615,13 +612,13 @@
             document.getElementById('totalCal').innerText = totCal.toFixed(1);
 
             updateProgressBars(totCal, totP, totC);
+            updateDonutChart(totP, totC, totCal);
         }
 
         async function addFoodToDailyLog() {
             const foodInputValue = document.getElementById('trackerFoodInput').value;
             const mult = parseFloat(document.getElementById('trackerFoodUnit').value) || 1;
-            const rawWeight = parseFloat(document.getElementById('trackerFoodWeight').value) || 0;
-            const weight = rawWeight * mult;
+            const weight = (parseFloat(document.getElementById('trackerFoodWeight').value) || 0) * mult;
 
             const item = findFoodByInput(foodInputValue);
             if (!item || weight <= 0) {
@@ -637,7 +634,7 @@
             const { error } = await supabaseClient.from('food_logs').insert([{
                 username: currentUser,
                 date: selectedTrackerDate,
-                name: currentLang === 'ku' ? item.ku : item.en,
+                name: currentLang === 'ku' && item.ku ? item.ku : item.en,
                 weight: weight,
                 calories: cal,
                 protein: protein,
@@ -665,30 +662,83 @@
         }
 
         function updateProgressBars(totCal, totProt, totCarb) {
-            const calPct = Math.min(100, Math.round((totCal / GOALS.cal) * 100));
-            const protPct = Math.min(100, Math.round((totProt / GOALS.protein) * 100));
-            const carbPct = Math.min(100, Math.round((totCarb / GOALS.carb) * 100));
+            const calPct = Math.min(100, Math.round((totCal / userGoals.cal) * 100));
+            const protPct = Math.min(100, Math.round((totProt / userGoals.protein) * 100));
+            const carbPct = Math.min(100, Math.round((totCarb / userGoals.carb) * 100));
 
             const calFill = document.getElementById('barCalFill');
             calFill.style.width = calPct + '%';
-            calFill.classList.toggle('over-limit', totCal > GOALS.cal);
-            document.getElementById('barCalText').innerText = `${totCal.toFixed(0)} / ${GOALS.cal} kcal`;
-            document.getElementById('barCalPct').innerText = `${Math.round((totCal / GOALS.cal) * 100)}%`;
+            calFill.classList.toggle('over-limit', totCal > userGoals.cal);
+            document.getElementById('barCalText').innerText = `${totCal.toFixed(0)} / ${userGoals.cal} kcal`;
+            document.getElementById('barCalPct').innerText = `${Math.round((totCal / userGoals.cal) * 100)}%`;
 
             const protFill = document.getElementById('barProtFill');
             protFill.style.width = protPct + '%';
-            protFill.classList.toggle('over-limit', totProt > GOALS.protein);
-            document.getElementById('barProtText').innerText = `${totProt.toFixed(1)} / ${GOALS.protein}g`;
-            document.getElementById('barProtPct').innerText = `${Math.round((totProt / GOALS.protein) * 100)}%`;
+            protFill.classList.toggle('over-limit', totProt > userGoals.protein);
+            document.getElementById('barProtText').innerText = `${totProt.toFixed(1)} / ${userGoals.protein}g`;
+            document.getElementById('barProtPct').innerText = `${Math.round((totProt / userGoals.protein) * 100)}%`;
 
             const carbFill = document.getElementById('barCarbFill');
             carbFill.style.width = carbPct + '%';
-            carbFill.classList.toggle('over-limit', totCarb > GOALS.carb);
-            document.getElementById('barCarbText').innerText = `${totCarb.toFixed(1)} / ${GOALS.carb}g`;
-            document.getElementById('barCarbPct').innerText = `${Math.round((totCarb / GOALS.carb) * 100)}%`;
+            carbFill.classList.toggle('over-limit', totCarb > userGoals.carb);
+            document.getElementById('barCarbText').innerText = `${totCarb.toFixed(1)} / ${userGoals.carb}g`;
+            document.getElementById('barCarbPct').innerText = `${Math.round((totCarb / userGoals.carb) * 100)}%`;
         }
 
-        /* --- BARCODE CAMERA SCANNER (html5-qrcode) --- */
+        /* --- CHART.JS DONUT CHART --- */
+        function initChart() {
+            const ctx = document.getElementById('macroChart').getContext('2d');
+            if (macroChartInstance) macroChartInstance.destroy();
+            macroChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Protein Cal', 'Carb Cal', 'Other Cal'],
+                    datasets: [{
+                        data: [0, 0, 1],
+                        backgroundColor: ['#2980b9', '#27ae60', '#bdc3c7']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function updateDonutChart(totProt, totCarb, totCal) {
+            if (!macroChartInstance) return;
+            const protCal = totProt * 4;
+            const carbCal = totCarb * 4;
+            const fatOrOtherCal = Math.max(0, totCal - (protCal + carbCal));
+
+            macroChartInstance.data.datasets[0].data = [protCal, carbCal, fatOrOtherCal];
+            macroChartInstance.update();
+        }
+
+        /* --- EXPORT TO CSV / EXCEL --- */
+        function exportToCSV() {
+            if (!currentLogs || currentLogs.length === 0) {
+                alert("No food logs found for this date to export.");
+                return;
+            }
+
+            let csv = "ID,Food Name,Weight (g),Protein (g),Carb (g),Calories (kcal),Time Logged\n";
+            currentLogs.forEach((l, i) => {
+                csv += `"${i+1}","${l.name}","${l.weight}","${l.protein}","${l.carb}","${l.calories}","${l.time}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `food_log_${currentUser}_${selectedTrackerDate}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        /* --- GLOBAL OPEN FOOD FACTS API + BARCODE SCANNER --- */
         let html5QrCode = null;
 
         function toggleBarcodeScanner() {
@@ -704,7 +754,7 @@
                     onBarcodeScanned,
                     () => {}
                 ).catch(err => {
-                    alert("Camera access denied or unavailable: " + err);
+                    alert("Camera permission denied: " + err);
                     stopBarcodeScanner();
                 });
             }
@@ -723,19 +773,109 @@
             }
         }
 
-        function onBarcodeScanned(decodedText) {
+        async function onBarcodeScanned(barcode) {
             stopBarcodeScanner();
-            const matchedFoodName = barcodeDirectory[decodedText];
-            if (matchedFoodName) {
-                const item = foodDatabase.find(f => f.en === matchedFoodName);
-                if (item) {
-                    document.getElementById('trackerFoodInput').value = `${item.en} (${item.ku})`;
-                    document.getElementById('trackerFoodWeight').value = '100';
-                    alert(`Barcode scanned: ${decodedText}\nFound: ${item.en}`);
-                    return;
-                }
+
+            // 1. Check local catalog
+            const localItem = foodDatabase.find(f => f.barcode === barcode);
+            if (localItem) {
+                document.getElementById('trackerFoodInput').value = localItem.ku ? `${localItem.en} (${localItem.ku})` : localItem.en;
+                document.getElementById('trackerFoodWeight').value = '100';
+                alert(`Found: ${localItem.en}`);
+                return;
             }
-            alert(`Scanned barcode: ${decodedText}\nNot found in local database. Please select manually.`);
+
+            // 2. Query Global Open Food Facts API
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+                const data = await res.json();
+
+                if (data.status === 1 && data.product) {
+                    const p = data.product;
+                    const name = p.product_name || "Packaged Product";
+                    const cal = p.nutriments['energy-kcal_100g'] || 0;
+                    const prot = p.nutriments['proteins_100g'] || 0;
+                    const carb = p.nutriments['carbohydrates_100g'] || 0;
+
+                    const newDish = { en: name, ku: name, p: prot, c: carb, cal: cal, barcode: barcode };
+                    foodDatabase.push(newDish);
+                    populateFoodDatalist();
+
+                    document.getElementById('trackerFoodInput').value = name;
+                    document.getElementById('trackerFoodWeight').value = '100';
+                    alert(`Global Food Match!\nProduct: ${name}\n100g: ${cal} kcal | P: ${prot}g | C: ${carb}g`);
+                } else {
+                    alert(`Barcode ${barcode} not found in database. You can manually enter or add it as a Custom Dish.`);
+                }
+            } catch (err) {
+                alert("Could not fetch product information from the global barcode database.");
+            }
+        }
+
+        /* --- CUSTOM DISH CREATOR --- */
+        async function loadCustomDishes() {
+            const { data: dishes, error } = await supabaseClient.from('custom_foods').select('*').eq('username', currentUser);
+            if (dishes) {
+                dishes.forEach(d => {
+                    if (!foodDatabase.some(f => f.en === d.name)) {
+                        foodDatabase.push({ en: d.name, ku: d.name, p: Number(d.protein), c: Number(d.carb), cal: Number(d.calories) });
+                    }
+                });
+                populateFoodDatalist();
+            }
+        }
+
+        async function saveCustomDish() {
+            const name = document.getElementById('custNameInput').value.trim();
+            const cal = parseFloat(document.getElementById('custCalInput').value) || 0;
+            const prot = parseFloat(document.getElementById('custProtInput').value) || 0;
+            const carb = parseFloat(document.getElementById('custCarbInput').value) || 0;
+
+            if (!name || cal <= 0) {
+                alert("Please enter a valid dish name and calorie count.");
+                return;
+            }
+
+            const { error } = await supabaseClient.from('custom_foods').insert([{ 
+                username: currentUser, name: name, calories: cal, protein: prot, carb: carb 
+            }]);
+            if (error) {
+                alert("Error saving custom dish: " + error.message);
+                return;
+            }
+
+            foodDatabase.push({ en: name, ku: name, p: prot, c: carb, cal: cal });
+            populateFoodDatalist();
+            document.getElementById('trackerFoodInput').value = name;
+            closeModal('customFoodModal');
+            alert(`"${name}" saved to your permanent personal database!`);
+        }
+
+        /* --- USER GOALS MODAL --- */
+        function openGoalsModal() {
+            document.getElementById('goalCalInput').value = userGoals.cal;
+            document.getElementById('goalProteinInput').value = userGoals.protein;
+            document.getElementById('goalCarbInput').value = userGoals.carb;
+            document.getElementById('goalsModal').style.display = 'flex';
+        }
+
+        function openCustomFoodModal() {
+            document.getElementById('customFoodModal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function saveUserGoals() {
+            const c = parseFloat(document.getElementById('goalCalInput').value) || 2000;
+            const p = parseFloat(document.getElementById('goalProteinInput').value) || 140;
+            const carb = parseFloat(document.getElementById('goalCarbInput').value) || 225;
+
+            userGoals = { cal: c, protein: p, carb: carb };
+            await supabaseClient.from('profiles').update({ target_cal: c, target_protein: p, target_carb: carb }).eq('username', currentUser);
+            closeModal('goalsModal');
+            await fetchAndRenderCloudLogs();
         }
 
         /* --- ADMIN DASHBOARD --- */
@@ -743,11 +883,7 @@
             const tbody = document.getElementById('adminUserTableBody');
             tbody.innerHTML = '<tr><td colspan="3">Loading users...</td></tr>';
 
-            const { data: users, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .order('username', { ascending: true });
-
+            const { data: users, error } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
             if (error) {
                 tbody.innerHTML = `<tr><td colspan="3" style="color:red;">Error: ${error.message}</td></tr>`;
                 return;
@@ -756,10 +892,7 @@
             tbody.innerHTML = '';
             users.forEach(u => {
                 const tr = document.createElement('tr');
-                const actionBtn = !u.approved
-                    ? `<button class="btn btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="approveUser('${u.username}')">Approve</button>`
-                    : '<span style="color:green;font-weight:bold;">Approved</span>';
-
+                const actionBtn = !u.approved ? `<button class="btn btn-success" style="padding:4px 8px; font-size:0.8rem;" onclick="approveUser('${u.username}')">Approve</button>` : '<span style="color:green;font-weight:bold;">Active</span>';
                 tr.innerHTML = `
                     <td><strong>${u.username}</strong></td>
                     <td>${u.approved ? 'Active' : '<span style="color:orange;">Pending</span>'}</td>
@@ -770,49 +903,13 @@
         }
 
         async function approveUser(userToApprove) {
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update({ approved: true })
-                .eq('username', userToApprove);
-
-            if (error) {
-                alert("Failed to approve user: " + error.message);
-                return;
-            }
+            await supabaseClient.from('profiles').update({ approved: true }).eq('username', userToApprove);
             loadAdminUsers();
         }
 
-        /* --- FOOD DATABASE VIEW --- */
-        function renderFoodDatabaseTable() {
-            const tbody = document.getElementById('foodTableBody');
-            tbody.innerHTML = '';
-            document.getElementById('recordCount').innerText = foodDatabase.length;
-
-            foodDatabase.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${item.en}</strong></td>
-                    <td dir="rtl">${item.ku}</td>
-                    <td>${item.cal}</td>
-                    <td>${item.c}g</td>
-                    <td>${item.p}g</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Initialize autocompletes & initial date
+        // Initialize autocompletes & date
         populateFoodDatalist();
         document.getElementById('historyDateSelect').value = selectedTrackerDate;
-
-        // Register Service Worker for PWA Offline Capability
-        if ('serviceWorker' in navigator) {
-            const swBlob = new Blob([`
-                self.addEventListener('install', e => self.skipWaiting());
-                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-            `], { type: 'application/javascript' });
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
-        }
     </script>
 </body>
 </html>
