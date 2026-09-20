@@ -2,184 +2,729 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Tracker</title>
-    <!-- Include EmailJS, Supabase, and Html5Qrcode SDKs -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Beast Nutrition & Tracker</title>
+    
+    <meta name="theme-color" content="#090d16">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Beast Nutrition","short_name":"BeastTrack","start_url":".","display":"standalone","background_color":"#090d16","theme_color":"#090d16","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/1046/1046784.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <!-- Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Core Libraries -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0b1120; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; padding: 15px; }
-        
-        header { text-align: center; margin-bottom: 15px; width: 100%; max-width: 850px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { color: #38bdf8; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+        :root {
+            --bg-primary: #090d16;
+            --bg-secondary: #111827;
+            --surface-glass: rgba(17, 24, 39, 0.75);
+            --surface-card: rgba(26, 34, 53, 0.65);
+            --surface-elevated: #1f293d;
+            --border-glass: rgba(255, 255, 255, 0.08);
 
-        .lang-btn { background: #1e293b; color: #38bdf8; border: 1px solid #38bdf8; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: 0.2s; }
-        .lang-btn:hover { background: #38bdf8; color: #0b1120; }
+            --accent-primary: #3b82f6;
+            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            --beast-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            
+            --macro-cal: #f59e0b;
+            --macro-prot: #ef4444;
+            --macro-carb: #8b5cf6;
+            --macro-fat: #06b6d4;
+            --macro-water: #3b82f6;
+            --macro-steps: #10b981;
 
-        .card { background: #151f32; width: 440px; max-width: 95vw; padding: 20px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid #23324d; position: relative; }
-        .card.wide { width: 850px; max-width: 95vw; }
-        .card h2 { color: #f1f5f9; font-size: 1.3rem; margin-bottom: 15px; text-align: center; }
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            
+            --shadow-subtle: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
 
-        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #23324d; padding-bottom: 10px; gap: 8px; flex-wrap: wrap; }
-        .user-badge { font-weight: bold; color: #38bdf8; font-size: 0.95rem; }
-        
-        .header-actions { display: flex; gap: 6px; align-items: center; }
-        .admin-btn { background: #8b5cf6; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        .admin-btn:hover { background: #7c3aed; }
-        .logout-btn { background: #ef4444; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        .logout-btn:hover { background: #dc2626; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', 'Vazirmatn', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        /* Dashboard Top Widgets */
-        .dash-widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .widget-card { background: #0b1120; border: 1px solid #23324d; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        .widget-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #94a3b8; font-weight: bold; }
-        .widget-val { font-size: 1.4rem; font-weight: 800; color: #f8fafc; margin: 4px 0; }
-        .widget-target { font-size: 0.75rem; color: #64748b; }
-        .widget-btns { display: flex; gap: 4px; margin-top: 8px; }
-        .w-btn { flex: 1; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 4px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .w-btn:hover { background: #334155; }
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px 16px 95px 16px;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
 
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #94a3b8; font-size: 0.85rem; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; background: #0b1120; border: 1px solid #23324d; border-radius: 8px; outline: none; font-size: 0.95rem; color: #f8fafc; }
-        .form-group input:focus, .form-group select:focus { border-color: #38bdf8; }
+        .app-shell {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
 
-        .portion-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
-        .action-row { display: flex; gap: 8px; }
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 4px;
+        }
 
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-primary { background-color: #2563eb; color: white; }
-        .btn-primary:hover { background-color: #1d4ed8; }
-        .btn-success { background-color: #10b981; color: white; }
-        .btn-success:hover { background-color: #059669; }
-        .btn-ai { background-color: #10b981; color: white; flex: 1; display: flex; justify-content: center; align-items: center; gap: 6px; }
-        .btn-ai:hover { background-color: #059669; }
-        .btn-scan { background-color: #8b5cf6; color: white; flex: 1; display: flex; justify-content: center; align-items: center; gap: 6px; }
-        .btn-scan:hover { background-color: #7c3aed; }
-        .btn-add-food { background-color: #0284c7; color: white; width: auto; padding: 0 14px; white-space: nowrap; }
-        .btn-add-food:hover { background-color: #0369a1; }
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        .toggle-link { display: block; text-align: center; margin-top: 15px; color: #38bdf8; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
-        .toggle-link:hover { text-decoration: underline; }
-        .message { text-align: center; margin-top: 10px; font-size: 0.85rem; }
+        .brand-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--beast-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+            font-size: 1.1rem;
+            color: white;
+        }
 
-        .nav-buttons { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; }
-        .nav-btn { flex: 1; padding: 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; cursor: pointer; font-weight: bold; color: #e2e8f0; text-align: center; font-size: 0.85rem; }
-        .nav-btn:hover { background: #334155; }
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-        .content-box { border: 1px solid #23324d; border-radius: 10px; padding: 14px; margin-bottom: 15px; background: #151f32; }
+        .glass-pill-btn {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
 
-        /* Progress Bars */
-        .progress-section { margin-bottom: 15px; background: #0b1120; padding: 14px; border-radius: 10px; border: 1px solid #23324d; }
-        .progress-bar-group { margin-bottom: 10px; }
-        .progress-bar-group:last-child { margin-bottom: 0; }
-        .progress-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; color: #cbd5e1; }
-        .progress-bg { width: 100%; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; }
-        .progress-fill { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s; }
-        .cal-fill { background-color: #f97316; }
-        .protein-fill { background-color: #38bdf8; }
-        .carb-fill { background-color: #10b981; }
-        .over-limit { background-color: #ef4444 !important; }
+        .glass-pill-btn:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
 
-        .results-box { border: 1px solid #23324d; border-radius: 8px; padding: 12px; background: #0b1120; }
-        .results-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #23324d; padding-bottom: 6px; margin-bottom: 8px; color: #94a3b8; }
-        .results-values { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; color: #38bdf8; }
+        .beast-card {
+            background: var(--surface-glass);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-subtle);
+            position: relative;
+            overflow: hidden;
+        }
 
-        .search-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-        .table-container { max-height: 450px; overflow-y: auto; border: 1px solid #23324d; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
-        th, td { padding: 10px 12px; border-bottom: 1px solid #1e293b; color: #e2e8f0; }
-        th { background: #0b1120; color: #38bdf8; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #23324d; }
-        tr:hover { background-color: #1e293b; }
-        tfoot tr { background-color: #0b1120; font-weight: bold; }
+        .beast-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+        }
 
-        .back-btn { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
-        .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .date-badge { background: #38bdf8; color: #0b1120; padding: 5px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; }
-        .history-picker { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
-        .history-picker label { font-weight: bold; font-size: 0.85rem; color: #94a3b8; }
+        .form-group {
+            margin-bottom: 14px;
+        }
 
-        /* Modals */
-        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; }
-        .modal-content { background: #151f32; padding: 20px; border-radius: 12px; width: 420px; max-width: 92vw; border: 1px solid #23324d; }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .portion-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr;
+            gap: 10px;
+        }
+
+        .scanner-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            width: 100%;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .btn-scan {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #a78bfa;
+            border-radius: var(--radius-sm);
+            padding: 0 16px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .quick-chips-wrapper {
+            margin-bottom: 16px;
+        }
+
+        .chips-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .quick-chips-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+
+        .quick-chips-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .quick-chip {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: 0.2s;
+        }
+
+        .quick-chip:hover {
+            background: var(--surface-elevated);
+            color: var(--text-primary);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .widget-box {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .widget-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 6px 0;
+        }
+
+        .widget-sub {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            margin-bottom: 10px;
+        }
+
+        .widget-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mini-btn {
+            flex: 1;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            padding: 6px 4px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .analytics-card {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 16px;
+            align-items: center;
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .macro-progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        .table-wrapper {
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        th {
+            background: var(--surface-elevated);
+            color: var(--text-secondary);
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        tfoot td {
+            font-weight: 800;
+            color: var(--accent-primary);
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .avatar-cluster {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar-frame {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid var(--macro-steps);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            background: #1e293b;
+        }
+
+        .avatar-badge-edit {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 32px;
+            height: 32px;
+            background: var(--surface-elevated);
+            border: 2px solid var(--border-glass);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+        }
+
+        .profile-name {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .bio-chips-row {
+            display: flex;
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+
+        .bio-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .bio-item:not(:last-child) {
+            border-right: 1px solid var(--border-glass);
+        }
+
+        .bio-num {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .bio-lbl {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        .macro-quad-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .macro-tile {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 90px;
+        }
+
+        .macro-tile-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tile-icon-box {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .tile-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-top: 6px;
+        }
+
+        .bottom-dock {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 440px;
+            background: rgba(17, 24, 39, 0.85);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            z-index: 99;
+        }
+
+        .dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dock-item i {
+            font-size: 1.1rem;
+        }
+
+        .dock-item.active {
+            color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            inset: 0;
+            background: rgba(5, 8, 16, 0.8);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 420px;
+            padding: 24px;
+            box-shadow: var(--shadow-subtle);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 10px;
+        }
+
+        .user-badge {
+            font-weight: bold;
+            color: var(--accent-primary);
+        }
+
+        .toggle-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .controls-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .date-badge {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
 
         body[dir="rtl"] table { text-align: right; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1 data-i18n="appTitle">Food Tracker</h1>
-        <button class="lang-btn" onclick="toggleLanguage()">Kurdish / کوردی</button>
-    </header>
-
-    <datalist id="foodDatalist"></datalist>
-    <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display: none;" onchange="handleAIFoodPhoto(this)">
-
-    <!-- LOGIN PAGE -->
-    <div class="card" id="loginPage">
-        <h2 data-i18n="loginTitle">Login</h2>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="loginUsername" data-i18n="username">Username</label>
-                <input type="text" id="loginUsername" required placeholder="Enter username">
+    <div class="app-shell">
+        <div class="top-nav">
+            <div class="brand-cluster">
+                <div class="brand-badge"><i class="fa-solid fa-bolt"></i></div>
+                <div class="brand-title">BeastTrack</div>
             </div>
-            <div class="form-group">
-                <label for="loginPassword" data-i18n="password">Password</label>
-                <input type="password" id="loginPassword" required placeholder="Enter password">
-            </div>
-            <button type="submit" class="btn btn-primary" data-i18n="loginBtn">Login</button>
-        </form>
-        <span class="toggle-link" onclick="showPage('signupPage')" data-i18n="gotoSignup">Sign Up</span>
-        <div class="message" id="loginMsg"></div>
-    </div>
-
-    <!-- SIGNUP PAGE -->
-    <div class="card" id="signupPage" style="display: none;">
-        <h2 data-i18n="signupTitle">Sign Up</h2>
-        <form id="signupForm">
-            <div class="form-group">
-                <label for="signupUsername" data-i18n="username">Username</label>
-                <input type="text" id="signupUsername" required placeholder="Choose username">
-            </div>
-            <div class="form-group">
-                <label for="signupPassword" data-i18n="password">Password</label>
-                <input type="password" id="signupPassword" required placeholder="Choose password">
-            </div>
-            <button type="submit" class="btn btn-success" data-i18n="saveBtn">Save</button>
-        </form>
-        <span class="toggle-link" onclick="showPage('loginPage')" data-i18n="gotoLogin">Already have an account? Login</span>
-        <div class="message" id="signupMsg"></div>
-    </div>
-
-    <!-- MAIN CALCULATOR PAGE -->
-    <div class="card" id="mainPage" style="display: none;">
-        <div class="user-header">
-            <span class="user-badge"><span data-i18n="userLabel">User</span>: <span class="activeUserSpan"></span></span>
-            <div class="header-actions">
-                <button class="admin-btn adminOnly" style="display:none;" onclick="openAdminDashboard()">Admin</button>
-                <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn">Logout</button>
+            <div style="display:flex; gap:8px;">
+                <button class="glass-pill-btn" onclick="toggleLanguage()"><i class="fa-solid fa-globe"></i> <span id="langBtnText">کوردی</span></button>
+                <button class="glass-pill-btn adminOnly" style="display:none;" onclick="showPage('adminPage')"><i class="fa-solid fa-shield-halved"></i></button>
             </div>
         </div>
 
-        <div class="nav-buttons">
-            <button class="nav-btn" onclick="openFuturePage('listOfFoodPage')" data-i18n="navFoodList">List of food</button>
-            <button class="nav-btn" onclick="openFuturePage('dailyTrackerPage')" data-i18n="navDailyTracker">My daily Food tracker</button>
+        <datalist id="foodDatalist"></datalist>
+
+        <!-- PAGE 1: LOGIN -->
+        <div class="beast-card" id="loginPage">
+            <h2 style="margin-bottom: 20px;" data-i18n="loginTitle">Account Access</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label data-i18n="username">Username</label>
+                    <input type="text" class="form-control" id="loginUsername" required placeholder="Your username">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="password">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-action btn-primary" style="margin-top: 10px;" data-i18n="loginBtn">Login to Beast</button>
+            </form>
+            <span class="toggle-link" onclick="showPage('signupPage')" data-i18n="gotoSignup">No account yet? Create one</span>
+            <div class="message" id="loginMsg"></div>
         </div>
 
-        <div class="content-box">
-            <div class="form-group">
-                <label for="foodInput" data-i18n="foodNameLabel">Food Name</label>
-                <input type="text" id="foodInput" list="foodDatalist" placeholder="Type or search food name..." oninput="calculateNutrients()">
+        <!-- PAGE 2: SIGNUP -->
+        <div class="beast-card" id="signupPage" style="display: none;">
+            <h2 style="margin-bottom: 20px;" data-i18n="signupTitle">Create Account</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label data-i18n="username">Username</label>
+                    <input type="text" class="form-control" id="signupUsername" required placeholder="Pick a username">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="password">Password</label>
+                    <input type="password" class="form-control" id="signupPassword" required placeholder="Choose a password">
+                </div>
+                <button type="submit" class="btn-action btn-primary" style="background:var(--beast-gradient); margin-top: 10px;" data-i18n="saveBtn">Register Now</button>
+            </form>
+            <span class="toggle-link" onclick="showPage('loginPage')" data-i18n="gotoLogin">Already have an account? Login</span>
+            <div class="message" id="signupMsg"></div>
+        </div>
+
+        <!-- PAGE 3: MAIN QUICK-CALCULATOR SCREEN -->
+        <div class="beast-card" id="mainPage" style="display: none;">
+            <div class="user-header">
+                <span class="user-badge"><i class="fa-solid fa-user-astronaut"></i> <span class="activeUserSpan"></span></span>
+                <button class="glass-pill-btn" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
             </div>
 
             <div class="form-group">
-                <label data-i18n="portionLabel">Portion / Weight</label>
+                <label data-i18n="foodNameLabel">Quick Nutritional Inspection</label>
+                <div class="scanner-row">
+                    <input type="text" class="form-control" id="mainFoodInput" list="foodDatalist" placeholder="Search dish or supplement..." oninput="calculateNutrients()">
+                    <button class="btn-scan" onclick="openBarcodeScanner('main')"><i class="fa-solid fa-barcode"></i></button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="portionLabel">Portion Size</label>
                 <div class="portion-grid">
-                    <input type="number" id="foodWeight" placeholder="100" oninput="calculateNutrients()">
-                    <select id="foodUnit" onchange="convertUnit('foodWeight', 'foodUnit'); calculateNutrients();">
+                    <input type="number" class="form-control" id="mainFoodWeight" placeholder="100" oninput="calculateNutrients()">
+                    <select class="form-control" id="mainFoodUnit" onchange="convertUnit('mainFoodWeight', 'mainFoodUnit'); calculateNutrients();">
                         <option value="1">Grams (g)</option>
                         <option value="15">Spoon (~15g)</option>
                         <option value="240">Cup/Bowl (~240g)</option>
@@ -189,270 +734,296 @@
                 </div>
             </div>
 
-            <div class="action-row" style="margin-top: 10px;">
-                <button class="btn btn-ai" onclick="triggerAICamera()">✨ AI Snap</button>
-                <button class="btn btn-scan" onclick="openBarcodeScanner('main')">📷 Barcode</button>
-            </div>
-        </div>
-
-        <div class="results-box">
-            <div class="results-header">
-                <span data-i18n="calories">Calories</span>
-                <span data-i18n="carb">Carb</span>
-                <span data-i18n="protein">Protein</span>
-                <span data-i18n="food">Food Name</span>
-            </div>
-            <div class="results-values">
-                <span id="resCal">0</span>
-                <span id="resCarb">0g</span>
-                <span id="resProtein">0g</span>
-                <span id="resName">-</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- PAGE 2: LIST OF FOOD -->
-    <div class="card wide" id="listOfFoodPage" style="display: none;">
-        <div class="user-header">
-            <button class="back-btn" onclick="showPage('mainPage')" data-i18n="backBtn">&larr; Back to Main</button>
-            <div class="header-actions">
-                <span class="user-badge"><span data-i18n="userLabel">User</span>: <span class="activeUserSpan"></span></span>
-                <button class="admin-btn adminOnly" style="display:none;" onclick="openAdminDashboard()">Admin</button>
-                <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn">Logout</button>
-            </div>
-        </div>
-        
-        <h2><span data-i18n="foodDbTitle">Food Database</span> (<span id="recordCount">0</span> <span data-i18n="records">Records</span>)</h2>
-        
-        <div class="search-controls">
-            <input type="text" id="tableSearch" placeholder="Search food in English or Kurdish..." onkeyup="renderTable()" style="flex:1; min-width:180px;">
-            <select id="categoryFilter" onchange="renderTable()" style="width: 170px;">
-                <option value="" data-i18n="catAll">All Categories</option>
-                <option value="Rule 1 Protein">Rule 1 Protein</option>
-                <option value="Custom / User Added">Custom / User Added</option>
-                <option value="Kurdish Dish">Kurdish Dish</option>
-                <option value="Kurdish Dairy">Kurdish Dairy</option>
-                <option value="Kurdish Drink">Kurdish Drink</option>
-                <option value="Kurdish Sweet">Kurdish Sweet</option>
-                <option value="Cooked Food">Cooked Food</option>
-                <option value="Fruit">Fruit</option>
-            </select>
-            <button class="btn btn-add-food" onclick="openAddFoodModal()">➕ Add Product</button>
-        </div>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th data-i18n="thNameEn">Food Name (English)</th>
-                        <th data-i18n="thNameKu">ناوی خۆراک (کوردی)</th>
-                        <th data-i18n="thCat">Category</th>
-                        <th data-i18n="thCal">Cal (100g)</th>
-                        <th data-i18n="thCarb">Carb (100g)</th>
-                        <th data-i18n="thProt">Protein (100g)</th>
-                    </tr>
-                </thead>
-                <tbody id="foodTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- PAGE 3: MY DAILY FOOD TRACKER -->
-    <div class="card wide" id="dailyTrackerPage" style="display: none;">
-        <div class="user-header">
-            <button class="back-btn" onclick="showPage('mainPage')" data-i18n="backBtn">&larr; Back to Main</button>
-            <div class="header-actions">
-                <span class="user-badge"><span data-i18n="userLabel">User</span>: <span class="activeUserSpan"></span></span>
-                <button class="admin-btn adminOnly" style="display:none;" onclick="openAdminDashboard()">Admin</button>
-                <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn">Logout</button>
-            </div>
-        </div>
-        
-        <div class="tracker-header">
-            <h2 data-i18n="dailyTrackerTitle">Daily Food Tracker</h2>
-            <div class="date-badge" id="currentDateDisplay">Date: --</div>
-        </div>
-
-        <!-- TOP WIDGETS: WATER INTAKE & ACTIVITY -->
-        <div class="dash-widgets">
-            <div class="widget-card">
-                <div class="widget-head">
-                    <span>Water Intake 💧</span>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; text-align:center; background:var(--surface-card); border:1px solid var(--border-glass); border-radius:var(--radius-md); padding:12px; margin-top:16px;">
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-tertiary);">Calories</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--macro-cal);" id="resCal">0</div>
                 </div>
-                <div class="widget-val"><span id="waterDisplay">0</span> ml</div>
-                <div class="widget-target">Target: 2,500 ml</div>
-                <div class="widget-btns">
-                    <button class="w-btn" onclick="addWater(250)">+250</button>
-                    <button class="w-btn" onclick="addWater(500)">+500</button>
-                    <button class="w-btn" onclick="resetWater()">↺</button>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-tertiary);">Protein</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--macro-prot);" id="resProtein">0g</div>
                 </div>
-            </div>
-            <div class="widget-card">
-                <div class="widget-head">
-                    <span>Activity 🏃</span>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-tertiary);">Carbs</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--macro-carb);" id="resCarb">0g</div>
                 </div>
-                <div class="widget-val"><span id="stepDisplay">0</span></div>
-                <div class="widget-target">Target: 10,000 steps</div>
-                <div class="widget-btns">
-                    <button class="w-btn" onclick="addSteps(500)">+500</button>
-                    <button class="w-btn" onclick="addSteps(1000)">+1k</button>
-                    <button class="w-btn" onclick="resetSteps()">↺</button>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-tertiary);">Food</div>
+                    <div style="font-size:0.85rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="resName">-</div>
                 </div>
             </div>
         </div>
 
-        <!-- PROGRESS BARS SECTION -->
-        <div class="progress-section">
-            <div class="progress-bar-group">
-                <div class="progress-header">
-                    <span><span data-i18n="calories">Calories</span>: <span id="barCalText">0 / 2000 kcal</span></span>
-                    <span id="barCalPct">0%</span>
+        <!-- PAGE 4: DAILY TRACKER -->
+        <div class="beast-card" id="dailyTrackerPage" style="display: none;">
+            <div class="user-header">
+                <div>
+                    <div style="font-size:0.75rem; color:var(--text-tertiary);">Welcome back,</div>
+                    <div style="font-size:1.1rem; font-weight:800;"><span class="activeUserSpan"></span></div>
                 </div>
-                <div class="progress-bg"><div class="progress-fill cal-fill" id="barCalFill"></div></div>
-            </div>
-            <div class="progress-bar-group">
-                <div class="progress-header">
-                    <span><span data-i18n="protein">Protein</span>: <span id="barProtText">0 / 140g</span></span>
-                    <span id="barProtPct">0%</span>
-                </div>
-                <div class="progress-bg"><div class="progress-fill protein-fill" id="barProtFill"></div></div>
-            </div>
-            <div class="progress-bar-group">
-                <div class="progress-header">
-                    <span><span data-i18n="carb">Carb</span>: <span id="barCarbText">0 / 225g</span></span>
-                    <span id="barCarbPct">0%</span>
-                </div>
-                <div class="progress-bg"><div class="progress-fill carb-fill" id="barCarbFill"></div></div>
-            </div>
-        </div>
-
-        <div class="history-picker">
-            <label for="historyDateSelect" data-i18n="viewHistory">View History Date:</label>
-            <select id="historyDateSelect" onchange="changeTrackerDateView()"></select>
-        </div>
-
-        <div class="content-box" id="trackerInputArea">
-            <div class="action-row" style="margin-bottom: 12px;">
-                <button class="btn btn-ai" onclick="triggerAICamera()">✨ AI Snap: Identify Food & Macros</button>
-                <button class="btn btn-scan" onclick="openBarcodeScanner('tracker')">📷 Scan Barcode / Camera</button>
-            </div>
-
-            <!-- AI Status Box -->
-            <div id="aiLoadingBox" style="display: none; text-align: center; padding: 12px; margin-bottom: 12px; background: #0b1120; border-radius: 6px; border: 1px solid #10b981; color: #10b981; font-weight: bold;">
-                🔄 AI is analyzing your meal...
-            </div>
-
-            <div class="form-group">
-                <label for="trackerFoodInput" data-i18n="foodNameLabel">Food Name</label>
-                <div class="action-row">
-                    <input type="text" id="trackerFoodInput" list="foodDatalist" placeholder="Select or search food...">
-                    <button class="btn btn-add-food" onclick="openAddFoodModal()">➕ Add</button>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <button class="glass-pill-btn" onclick="openCustomFoodModal()"><i class="fa-solid fa-plus"></i> Dish</button>
+                    <div class="date-badge" id="currentDateDisplay">--</div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label data-i18n="portionLabel">Portion / Weight</label>
-                <div class="portion-grid">
-                    <input type="number" id="trackerFoodWeight" placeholder="Enter quantity">
-                    <select id="trackerFoodUnit" onchange="convertUnit('trackerFoodWeight', 'trackerFoodUnit')">
-                        <option value="1">Grams (g)</option>
-                        <option value="15">Spoon (~15g)</option>
-                        <option value="240">Cup/Bowl (~240g)</option>
-                        <option value="120">Piece (~120g)</option>
-                        <option value="33">Scoop (~33g)</option>
-                    </select>
+            <!-- Water & Steps Dual Widgets -->
+            <div class="widgets-grid">
+                <div class="widget-box">
+                    <div class="widget-header">
+                        <span>Water Intake</span>
+                        <i class="fa-solid fa-droplet" style="color:var(--macro-water);"></i>
+                    </div>
+                    <div class="widget-value" style="color:var(--macro-water);"><span id="waterValue">0</span> <span style="font-size:0.8rem; font-weight:600;">ml</span></div>
+                    <div class="widget-sub">Target: 2,500 ml</div>
+                    <div class="widget-actions">
+                        <button class="mini-btn" onclick="addWater(250)">+250</button>
+                        <button class="mini-btn" onclick="addWater(500)">+500</button>
+                        <button class="mini-btn" onclick="resetWater()"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="widget-box">
+                    <div class="widget-header">
+                        <span>Activity</span>
+                        <i class="fa-solid fa-person-walking" style="color:var(--macro-steps);"></i>
+                    </div>
+                    <div class="widget-value" style="color:var(--macro-steps);"><span id="stepsValue">0</span></div>
+                    <div class="widget-sub">Target: 10,000 steps</div>
+                    <div class="widget-actions">
+                        <button class="mini-btn" onclick="addSteps(500)">+500</button>
+                        <button class="mini-btn" onclick="addSteps(1000)">+1k</button>
+                        <button class="mini-btn" onclick="promptManualSteps()"><i class="fa-solid fa-pen"></i></button>
+                    </div>
                 </div>
             </div>
 
-            <button class="btn btn-primary" onclick="addFoodToDailyLog()" data-i18n="addBtn">Add to Daily Log</button>
-        </div>
+            <!-- Analytics: Donut & Progress -->
+            <div class="analytics-card">
+                <div class="macro-progress-list">
+                    <div>
+                        <div class="progress-meta">
+                            <span style="color:var(--macro-cal);">Calories</span>
+                            <span id="barCalText">0 / 2000 kcal</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill" id="barCalFill" style="background:var(--macro-cal); width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="progress-meta">
+                            <span style="color:var(--macro-prot);">Protein</span>
+                            <span id="barProtText">0 / 140g</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill" id="barProtFill" style="background:var(--macro-prot); width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="progress-meta">
+                            <span style="color:var(--macro-carb);">Carbs</span>
+                            <span id="barCarbText">0 / 225g</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill" id="barCarbFill" style="background:var(--macro-carb); width:0%;"></div></div>
+                    </div>
+                    <div>
+                        <div class="progress-meta">
+                            <span style="color:var(--macro-fat);">Fat</span>
+                            <span id="barFatText">0 / 70g</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill" id="barFatFill" style="background:var(--macro-fat); width:0%;"></div></div>
+                    </div>
+                </div>
+                <div style="height: 110px; position: relative;">
+                    <canvas id="macroChart"></canvas>
+                </div>
+            </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">#</th>
-                        <th data-i18n="food">Food Name</th>
-                        <th data-i18n="weight">Weight</th>
-                        <th data-i18n="protein">Protein</th>
-                        <th data-i18n="carb">Carb</th>
-                        <th data-i18n="calories">Calories</th>
-                        <th data-i18n="timeAdded">Time Added</th>
-                        <th style="width: 50px;" data-i18n="action">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="trackerTableBody"></tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="2" data-i18n="total">Total</td>
-                        <td id="totalWeight">0g</td>
-                        <td id="totalProtein">0g</td>
-                        <td id="totalCarb">0g</td>
-                        <td id="totalCal">0</td>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
+            <!-- Quick Add Carousel -->
+            <div class="quick-chips-wrapper">
+                <div class="chips-title" data-i18n="quickAddTitle">⚡ Quick Add Kurdish Staples</div>
+                <div class="quick-chips-container" id="quickChips"></div>
+            </div>
 
-    <!-- MODAL 1: ADD PRODUCT / DISH -->
-    <div class="modal" id="addFoodModal">
-        <div class="modal-content">
-            <h3 style="color:#38bdf8; margin-bottom:12px;">Add Custom Product</h3>
-            <div class="form-group">
-                <label>English Name:</label>
-                <input type="text" id="newFoodEn" placeholder="e.g. Chicken Rice Bowl" required>
-            </div>
-            <div class="form-group">
-                <label>ناوی کوردی (Kurdish Name):</label>
-                <input type="text" id="newFoodKu" placeholder="ناوی بە کوردی">
-            </div>
-            <div class="form-group">
-                <label>Barcode (Optional):</label>
-                <input type="text" id="newFoodBarcode" placeholder="Scan or enter barcode number">
-            </div>
-            <div class="form-group">
-                <label>Category:</label>
-                <select id="newFoodCat">
-                    <option value="Custom / User Added">Custom / User Added</option>
-                    <option value="Rule 1 Protein">Rule 1 Protein</option>
-                    <option value="Kurdish Dish">Kurdish Dish</option>
-                    <option value="Cooked Food">Cooked Food</option>
-                    <option value="Fruit">Fruit</option>
-                </select>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <!-- Main Input Area -->
+            <div id="trackerInputArea">
+                <button type="button" class="btn-action" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:#c4b5fd; margin-bottom:12px;" onclick="openBarcodeScanner('tracker')">
+                    <i class="fa-solid fa-camera"></i> <span data-i18n="scanBtn">Scan Barcode / Camera</span>
+                </button>
+
                 <div class="form-group">
-                    <label>Cal (100g):</label>
-                    <input type="number" id="newFoodCal" placeholder="0">
+                    <label data-i18n="foodNameLabel">Log Food / Dish</label>
+                    <input type="text" class="form-control" id="trackerFoodInput" list="foodDatalist" placeholder="Select or type food...">
                 </div>
-                <div class="form-group">
-                    <label>Prot (100g):</label>
-                    <input type="number" id="newFoodProt" placeholder="0">
-                </div>
-                <div class="form-group">
-                    <label>Carb (100g):</label>
-                    <input type="number" id="newFoodCarb" placeholder="0">
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="saveNewFoodProduct()">Save Product</button>
-            <button class="btn logout-btn" style="margin-top:8px;" onclick="closeModal('addFoodModal')">Cancel</button>
-        </div>
-    </div>
 
-    <!-- MODAL 2: ADMIN USER MANAGEMENT DASHBOARD -->
-    <div class="modal" id="adminModal">
-        <div class="modal-content" style="width: 550px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h3 style="color:#8b5cf6;">Admin User Management</h3>
-                <button class="logout-btn" onclick="closeModal('adminModal')">✕</button>
+                <div class="form-group">
+                    <label data-i18n="portionLabel">Weight / Portion</label>
+                    <div class="portion-grid">
+                        <input type="number" class="form-control" id="trackerFoodWeight" placeholder="Quantity">
+                        <select class="form-control" id="trackerFoodUnit" onchange="convertUnit('trackerFoodWeight', 'trackerFoodUnit')">
+                            <option value="1">Grams (g)</option>
+                            <option value="15">Spoon (~15g)</option>
+                            <option value="240">Cup/Bowl (~240g)</option>
+                            <option value="120">Piece (~120g)</option>
+                            <option value="33">Scoop (~33g)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-action btn-primary" onclick="addFoodToDailyLog()" data-i18n="addBtn">Add to Daily Log</button>
             </div>
-            <div class="table-container" style="max-height:300px;">
+
+            <!-- Controls Toolbar -->
+            <div class="controls-toolbar" style="margin-top:16px;">
+                <input type="date" class="form-control" id="historyDateSelect" onchange="changeTrackerDateView()" style="width:auto; padding:6px 10px; font-size:0.8rem;">
+                <button class="glass-pill-btn" onclick="exportToCSV()"><i class="fa-solid fa-file-excel"></i> Export</button>
+            </div>
+
+            <!-- Table of Day's Entries -->
+            <div class="table-wrapper" style="margin-top: 10px;">
                 <table>
                     <thead>
                         <tr>
-                            <th>Username</th>
+                            <th>#</th>
+                            <th data-i18n="food">Food</th>
+                            <th data-i18n="weight">Weight</th>
+                            <th data-i18n="protein">P</th>
+                            <th data-i18n="carb">C</th>
+                            <th>F</th>
+                            <th data-i18n="calories">Cal</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="trackerTableBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" data-i18n="total">Total</td>
+                            <td id="totalWeight">0g</td>
+                            <td id="totalProtein">0g</td>
+                            <td id="totalCarb">0g</td>
+                            <td id="totalFat">0g</td>
+                            <td id="totalCal">0</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGE 5: FOOD DATABASE VIEW -->
+        <div class="beast-card" id="listOfFoodPage" style="display: none;">
+            <div class="user-header">
+                <h3 data-i18n="foodDbTitle">Master Database</h3>
+                <button class="glass-pill-btn" onclick="openCustomFoodModal()"><i class="fa-solid fa-plus"></i> New Dish</button>
+            </div>
+
+            <div class="search-controls">
+                <input type="text" class="form-control" id="tableSearch" placeholder="Search in English or Kurdish..." onkeyup="renderTable()">
+                <select class="form-control" id="categoryFilter" onchange="renderTable()" style="width: 140px;">
+                    <option value="" data-i18n="catAll">All</option>
+                    <option value="Rule 1 Protein">Rule 1</option>
+                    <option value="Custom Dish">Custom</option>
+                    <option value="Kurdish Dish">Kurdish</option>
+                    <option value="Cooked Food">Cooked</option>
+                    <option value="Fruit">Fruit</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="thNameEn">Name</th>
+                            <th data-i18n="thNameKu">کوردی</th>
+                            <th data-i18n="thCal">Cal</th>
+                            <th data-i18n="thProt">P</th>
+                            <th data-i18n="thCarb">C</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGE 6: PROFILE & TARGETS -->
+        <div class="beast-card" id="profilePage" style="display: none;">
+            <div class="user-header" style="border:none;">
+                <h3 style="color:var(--text-primary);">پڕۆفایل (Profile)</h3>
+                <button class="glass-pill-btn" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            </div>
+
+            <div class="avatar-cluster">
+                <div class="avatar-frame">
+                    <img class="avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Redin" alt="Avatar" id="userAvatarImg">
+                    <div class="avatar-badge-edit" onclick="openEditProfileModal()"><i class="fa-solid fa-pen"></i></div>
+                </div>
+                <div class="profile-name" id="profUsernameDisplay">Redin</div>
+            </div>
+
+            <div class="bio-chips-row">
+                <div class="bio-item">
+                    <div class="bio-num" id="profAgeDisplay">19</div>
+                    <div class="bio-lbl">ساڵ (Age)</div>
+                </div>
+                <div class="bio-item">
+                    <div class="bio-num" id="profHeightDisplay">185</div>
+                    <div class="bio-lbl">سم (cm)</div>
+                </div>
+                <div class="bio-item">
+                    <div class="bio-num" id="profWeightDisplay">87</div>
+                    <div class="bio-lbl">کگ (kg)</div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-weight:700; font-size:0.95rem;">ئامانجە خۆراکییەکان (Daily Targets)</span>
+                <button class="glass-pill-btn" onclick="openEditProfileModal()"><i class="fa-solid fa-pen"></i> Edit</button>
+            </div>
+
+            <div class="macro-quad-grid">
+                <div class="macro-tile">
+                    <div class="macro-tile-top">
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">کالۆری</span>
+                        <div class="tile-icon-box" style="background:rgba(245, 158, 11, 0.15); color:var(--macro-cal);"><i class="fa-solid fa-fire"></i></div>
+                    </div>
+                    <div class="tile-value" style="color:var(--macro-cal);" id="profCalDisplay">1633</div>
+                </div>
+
+                <div class="macro-tile">
+                    <div class="macro-tile-top">
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">پڕۆتین</span>
+                        <div class="tile-icon-box" style="background:rgba(239, 68, 68, 0.15); color:var(--macro-prot);"><i class="fa-solid fa-bullseye"></i></div>
+                    </div>
+                    <div class="tile-value" style="color:var(--macro-prot);" id="profProtDisplay">148g</div>
+                </div>
+
+                <div class="macro-tile">
+                    <div class="macro-tile-top">
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">کاربۆهیدرات</span>
+                        <div class="tile-icon-box" style="background:rgba(139, 92, 246, 0.15); color:var(--macro-carb);"><i class="fa-solid fa-bolt"></i></div>
+                    </div>
+                    <div class="tile-value" style="color:var(--macro-carb);" id="profCarbDisplay">84g</div>
+                </div>
+
+                <div class="macro-tile">
+                    <div class="macro-tile-top">
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">چەوری</span>
+                        <div class="tile-icon-box" style="background:rgba(6, 182, 212, 0.15); color:var(--macro-fat);"><i class="fa-solid fa-droplet"></i></div>
+                    </div>
+                    <div class="tile-value" style="color:var(--macro-fat);" id="profFatDisplay">78g</div>
+                </div>
+            </div>
+
+            <button class="btn-action btn-primary" onclick="openEditProfileModal()">ڕێکخستنی خودکار و دەستی (Calculator)</button>
+        </div>
+
+        <!-- PAGE 7: ADMIN ACCESS CONTROL -->
+        <div class="beast-card" id="adminPage" style="display: none;">
+            <div class="user-header">
+                <h3>Admin Authorization</h3>
+                <button class="glass-pill-btn" onclick="showPage('dailyTrackerPage')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
                             <th>Status</th>
                             <th>Role</th>
                             <th>Action</th>
@@ -464,26 +1035,164 @@
         </div>
     </div>
 
-    <!-- MODAL 3: BARCODE SCANNER -->
-    <div class="modal" id="scannerModal">
-        <div class="modal-content" style="text-align: center;">
-            <h3 style="margin-bottom: 12px; color: #38bdf8;">Scan Food Barcode</h3>
-            <div id="reader" style="width: 100%; min-height: 250px;"></div>
-            <button class="btn logout-btn" style="margin-top: 15px;" onclick="stopBarcodeScanner()">Close</button>
+    <!-- FLOATING DOCK MENU -->
+    <div class="bottom-dock" id="bottomDock" style="display: none;">
+        <button class="dock-item" id="dockTracker" onclick="showPage('dailyTrackerPage')">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Tracker</span>
+        </button>
+        <button class="dock-item" id="dockDatabase" onclick="showPage('listOfFoodPage')">
+            <i class="fa-solid fa-utensils"></i>
+            <span>Foods</span>
+        </button>
+        <button class="dock-item" id="dockCalculator" onclick="showPage('mainPage')">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Calculate</span>
+        </button>
+        <button class="dock-item" id="dockProfile" onclick="showPage('profilePage')">
+            <i class="fa-solid fa-circle-user"></i>
+            <span>Profile</span>
+        </button>
+    </div>
+
+    <!-- MODAL 1: EDIT PROFILE & AUTO-CALCULATOR -->
+    <div class="modal" id="editProfileModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:16px;">ڕێکخستنی پڕۆفایل و ئامانج</h3>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                <div class="form-group">
+                    <label>تەمەن</label>
+                    <input type="number" class="form-control" id="editAgeInput" placeholder="19">
+                </div>
+                <div class="form-group">
+                    <label>باڵا (cm)</label>
+                    <input type="number" class="form-control" id="editHeightInput" placeholder="185">
+                </div>
+                <div class="form-group">
+                    <label>کێش (kg)</label>
+                    <input type="number" class="form-control" id="editWeightInput" placeholder="87">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>شێوازی ئەژمارکردن (Calculation Mode)</label>
+                <select class="form-control" id="targetModeSelect" onchange="toggleTargetModeInputs()">
+                    <option value="auto">خۆکار (Auto Algorithm)</option>
+                    <option value="manual">دەستی (Manual Input)</option>
+                </select>
+            </div>
+
+            <div id="autoTargetBox" style="background:rgba(15,23,42,0.6); border:1px solid var(--border-glass); padding:12px; border-radius:var(--radius-sm); margin-bottom:12px;">
+                <div class="form-group">
+                    <label>ڕەگەز</label>
+                    <select class="form-control" id="autoSexSelect">
+                        <option value="male">نێر (Male)</option>
+                        <option value="female">مێ (Female)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>چالاکی و وەرزش</label>
+                    <select class="form-control" id="autoActivitySelect">
+                        <option value="1.2">وەرزش ناکەم (Sedentary)</option>
+                        <option value="1.375">١ - ٣ ڕۆژ لە هەفتەدا (Light)</option>
+                        <option value="1.55" selected>٣ - ٥ ڕۆژ لە هەفتەدا (Moderate)</option>
+                        <option value="1.725">٦ - ٧ ڕۆژ لە هەفتەدا (Heavy)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ئامانج</label>
+                    <select class="form-control" id="autoGoalSelect">
+                        <option value="-400">دابەزاندنی کێش (Cut)</option>
+                        <option value="0" selected>پاراستنی کێش (Maintain)</option>
+                        <option value="350">زیادکردنی کێش (Bulk)</option>
+                    </select>
+                </div>
+                <button type="button" class="btn-action btn-primary" style="padding:8px; font-size:0.85rem;" onclick="calculateAutoMacros()">محاسبە بکە (Calculate)</button>
+            </div>
+
+            <div id="macroInputsBox" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div class="form-group">
+                    <label>کالۆری</label>
+                    <input type="number" class="form-control" id="editCalInput">
+                </div>
+                <div class="form-group">
+                    <label>پڕۆتین (g)</label>
+                    <input type="number" class="form-control" id="editProtInput">
+                </div>
+                <div class="form-group">
+                    <label>کارب (g)</label>
+                    <input type="number" class="form-control" id="editCarbInput">
+                </div>
+                <div class="form-group">
+                    <label>چەوری (g)</label>
+                    <input type="number" class="form-control" id="editFatInput">
+                </div>
+            </div>
+
+            <button class="btn-action btn-primary" style="margin-top:10px;" onclick="saveProfileAndTargets()">پاشەکەوتکردن (Save)</button>
+            <button class="btn-action" style="background:transparent; color:var(--text-secondary); margin-top:6px;" onclick="closeModal('editProfileModal')">Close</button>
         </div>
     </div>
 
-    <!-- MODAL 4: BARCODE SCANNED PRODUCT -->
+    <!-- MODAL 2: CUSTOM FOOD CREATOR -->
+    <div class="modal" id="customFoodModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:14px;">Add Custom Dish</h3>
+            <div class="form-group">
+                <label>English Name</label>
+                <input type="text" class="form-control" id="custNameInput" placeholder="e.g. My Gym Shake">
+            </div>
+            <div class="form-group">
+                <label>ناوی کوردی</label>
+                <input type="text" class="form-control" id="custKuInput" placeholder="ناوی کوردی">
+            </div>
+            <div class="form-group">
+                <label>Barcode (Optional)</label>
+                <input type="text" class="form-control" id="custBarcodeInput" placeholder="Scan or enter numbers">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div class="form-group">
+                    <label>Cal (100g)</label>
+                    <input type="number" class="form-control" id="custCalInput" placeholder="150">
+                </div>
+                <div class="form-group">
+                    <label>Protein (100g)</label>
+                    <input type="number" class="form-control" id="custProtInput" placeholder="15">
+                </div>
+                <div class="form-group">
+                    <label>Carb (100g)</label>
+                    <input type="number" class="form-control" id="custCarbInput" placeholder="20">
+                </div>
+                <div class="form-group">
+                    <label>Fat (100g)</label>
+                    <input type="number" class="form-control" id="custFatInput" placeholder="5">
+                </div>
+            </div>
+            <button class="btn-action btn-primary" onclick="saveCustomDish()">Save to Database</button>
+            <button class="btn-action" style="background:transparent; color:var(--text-secondary); margin-top:6px;" onclick="closeModal('customFoodModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- MODAL 3: BARCODE SCANNER -->
+    <div class="modal" id="scannerModal">
+        <div class="modal-content" style="text-align:center;">
+            <h3 style="margin-bottom:14px;">Scan Product Barcode</h3>
+            <div id="reader" style="width: 100%; border-radius:var(--radius-md); overflow:hidden; min-height: 250px;"></div>
+            <button class="btn-action" style="background:rgba(255,255,255,0.1); margin-top:14px;" onclick="stopBarcodeScanner()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- MODAL 4: BARCODE PRODUCT LOG DIALOG -->
     <div class="modal" id="scannedProductModal">
         <div class="modal-content">
-            <h3 id="scannedProductName" style="margin-bottom:8px; color:#38bdf8;">Product Found</h3>
-            <p id="scannedProductMacros" style="font-size:0.85rem; color:#94a3b8; margin-bottom:12px;"></p>
-            
+            <h3 id="scannedProductName" style="margin-bottom:6px;">Product Found</h3>
+            <div id="scannedProductMacros" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:14px;"></div>
             <div class="form-group">
-                <label>Enter Quantity:</label>
+                <label>Portion Quantity</label>
                 <div class="portion-grid">
-                    <input type="number" id="scannedQtyInput" value="100" placeholder="Quantity">
-                    <select id="scannedUnitSelect">
+                    <input type="number" class="form-control" id="scannedQtyInput" value="100">
+                    <select class="form-control" id="scannedUnitSelect">
                         <option value="1">Grams (g)</option>
                         <option value="15">Spoon (~15g)</option>
                         <option value="240">Cup/Bowl (~240g)</option>
@@ -492,9 +1201,8 @@
                     </select>
                 </div>
             </div>
-
-            <button class="btn btn-primary" onclick="confirmScannedFoodAdd()">Add to Daily Log</button>
-            <button class="btn logout-btn" style="margin-top:6px;" onclick="closeModal('scannedProductModal')">Cancel</button>
+            <button class="btn-action btn-primary" onclick="confirmScannedFoodAdd()">Log to Tracker</button>
+            <button class="btn-action" style="background:transparent; color:var(--text-secondary); margin-top:6px;" onclick="closeModal('scannedProductModal')">Cancel</button>
         </div>
     </div>
 
@@ -506,197 +1214,186 @@
         const EMAILJS_TEMPLATE_ID = "template_jtg0y6r";
         const EMAILJS_PUBLIC_KEY = "Y9YX8JMUBxs2KrHDi";
 
-        // Gemini API key[cite: 5]
-        const GEMINI_API_KEY = "AQ.Ab8RN6LjviPedjD8wK9TasSpIfnX0g_fI_pTGZdYr49Fr5lUoA";
-
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-            emailjs.init(EMAILJS_PUBLIC_KEY);
-        }
+        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") emailjs.init(EMAILJS_PUBLIC_KEY);
 
-        const GITHUB_REPO = "redenmax12-sketch/food-tracker";
-        async function checkAutoUpdate() {
-            try {
-                const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/commits/main`, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' },
-                    cache: 'no-store'
-                });
-                if (!res.ok) return;
-                const data = await res.json();
-                const latestCommitSha = data.sha;
-                const storedCommitSha = localStorage.getItem('last_installed_commit');
+        let userProfile = {
+            age: 19,
+            height: 185,
+            weight: 87,
+            cal: 1633,
+            protein: 148,
+            carb: 84,
+            fat: 78,
+            targetMode: 'auto'
+        };
 
-                if (!storedCommitSha) {
-                    localStorage.setItem('last_installed_commit', latestCommitSha);
-                    return;
-                }
-                if (storedCommitSha !== latestCommitSha) {
-                    localStorage.setItem('last_installed_commit', latestCommitSha);
-                    if ('serviceWorker' in navigator) {
-                        const registrations = await navigator.serviceWorker.getRegistrations();
-                        for (let reg of registrations) await reg.unregister();
-                    }
-                    window.location.reload(true);
-                }
-            } catch (e) {}
-        }
-        window.addEventListener('load', checkAutoUpdate);
+        let currentUser = null;
+        let currentUserIsAdmin = false;
+        let selectedTrackerDate = new Date().toISOString().split('T')[0];
+        let currentLogs = [];
+        let macroChartInstance = null;
+        let html5QrCode = null;
+        let scannerTarget = 'tracker';
+        let pendingScannedItem = null;
 
-        const GOALS = { cal: 2000, protein: 140, carb: 225 };
+        let foodDatabase = [
+            // Rule 1 Supplements
+            {en: "Rule 1 R1 Protein WPI Chocolate Fudge (5lb)", ku: "ڕوڵ وەن ئایزۆلێت چۆکۆلێت ٥ پاوەند", p: 86.2, c: 3.4, f: 1.5, cal: 379, cat: "Rule 1 Protein", barcode: "858364003316"},
+            {en: "Rule 1 R1 Protein WPI Chocolate Fudge (2.5lb)", ku: "ڕوڵ وەن ئایزۆلێت چۆکۆلێت ٢.٥ پاوەند", p: 86.2, c: 3.4, f: 1.5, cal: 379, cat: "Rule 1 Protein", barcode: "858364003323"},
+            {en: "Rule 1 R1 Protein WPI Vanilla Butter (5lb)", ku: "ڕوڵ وەن ئایزۆلێت ڤانێلا ٥ پاوەند", p: 85.7, c: 3.6, f: 1.5, cal: 393, cat: "Rule 1 Protein", barcode: "858364003293"},
+            {en: "Rule 1 R1 Protein WPI Vanilla Butter (2.5lb)", ku: "ڕوڵ وەن ئایزۆلێت ڤانێلا ٢.٥ پاوەند", p: 85.7, c: 3.6, f: 1.5, cal: 393, cat: "Rule 1 Protein", barcode: "858364003309"},
+            {en: "Rule 1 R1 Protein WPI Strawberries & Creme (5lb)", ku: "ڕوڵ وەن ئایزۆلێت فرەولە ٥ پاوەند", p: 86.2, c: 3.4, f: 1.5, cal: 379, cat: "Rule 1 Protein", barcode: "858364003330"},
+            {en: "Rule 1 R1 Protein WPI Cookies & Creme (5lb)", ku: "ڕوڵ وەن ئایزۆلێت کێک و کرێم ٥ پاوەند", p: 85.7, c: 3.6, f: 1.5, cal: 393, cat: "Rule 1 Protein", barcode: "858364003378"},
+            {en: "Rule 1 R1 Whey Blend Chocolate Fudge (5lb)", ku: "ڕوڵ وەن بڵێند چۆکۆلێت ٥ پاوەند", p: 72.7, c: 12.1, f: 6.0, cal: 394, cat: "Rule 1 Protein", barcode: "858364003439"},
+            {en: "Rule 1 R1 Whey Blend Vanilla Ice Cream (5lb)", ku: "ڕوڵ وەن بڵێند ڤانێلا ٥ پاوەند", p: 72.7, c: 9.1, f: 6.0, cal: 394, cat: "Rule 1 Protein", barcode: "858364003415"},
+            {en: "Rule 1 R1 LBS Mass Gainer Chocolate (12lb)", ku: "ڕوڵ وەن گەینەر مەس چۆکۆلێت ١٢ پاوەند", p: 14.5, c: 73.6, f: 2.0, cal: 367, cat: "Rule 1 Protein", barcode: "858364003668"},
+            {en: "Rule 1 R1 Creatine Monohydrate Unflavored", ku: "ڕوڵ وەن کریاتین مۆنۆهیدرات بێ تام", p: 0.0, c: 0.0, f: 0.0, cal: 0, cat: "Rule 1 Protein", barcode: "858364003590"},
+
+            // Kurdish Dishes
+            {en: "Biryani Kurdish", ku: "بریانی کوردی", p: 8.5, c: 24, f: 6.5, cal: 185, cat: "Kurdish Dish"},
+            {en: "Yaprax / Dolma Kurdish", ku: "یاپراخ / دۆڵمەی کوردی", p: 4.5, c: 18, f: 6.0, cal: 145, cat: "Kurdish Dish"},
+            {en: "Kifte Kurdish (Stuffed)", ku: "کفتەی کوردی", p: 12, c: 15, f: 11, cal: 210, cat: "Kurdish Dish"},
+            {en: "Kifte Birwosh", ku: "کفتەی بروش", p: 9, c: 18, f: 7, cal: 175, cat: "Kurdish Dish"},
+            {en: "Shorba Nisk (Lentil Soup)", ku: "شۆربای نیسک", p: 6.5, c: 14, f: 1.5, cal: 95, cat: "Kurdish Dish"},
+            {en: "Shorba Birinj (Rice Soup)", ku: "شۆربای برنج", p: 2.5, c: 16, f: 1.0, cal: 85, cat: "Kurdish Dish"},
+            {en: "Kashk Soup (Ghir) / Tashrib Kashk", ku: "کەشکاو / شۆربای کەشک", p: 5, c: 12, f: 4.5, cal: 110, cat: "Kurdish Dish"},
+            {en: "Savark / Sowar (Bulgur Pilaf)", ku: "سەوەرک / برنجی ساور", p: 3.5, c: 22, f: 3.0, cal: 130, cat: "Kurdish Dish"},
+            {en: "Plaw Smaq (Sumac Rice)", ku: "پڵاوی سماق", p: 2.8, c: 26, f: 2.0, cal: 135, cat: "Kurdish Dish"},
+            {en: "Plaw Kismish (Raisin Rice)", ku: "پڵاوی کشمیش", p: 3, c: 29, f: 2.5, cal: 150, cat: "Kurdish Dish"},
+            {en: "Tashrib / Tharid Beef", ku: "تەشریبی گۆشتی گاو", p: 14, c: 12, f: 10, cal: 195, cat: "Kurdish Dish"},
+            {en: "Tashrib Lamb", ku: "تەشریبی گۆشتی مەڕ", p: 15, c: 10, f: 14, cal: 230, cat: "Kurdish Dish"},
+            {en: "Khorisht Bamiya (Okra Stew)", ku: "خۆرشتی بامیە", p: 3.2, c: 7.5, f: 2.5, cal: 65, cat: "Kurdish Dish"},
+            {en: "Khorisht Fasolia (Bean Stew)", ku: "خۆرشتی فاصۆلیا", p: 6, c: 15, f: 4.0, cal: 120, cat: "Kurdish Dish"},
+            {en: "Khorisht Patata (Potato Stew)", ku: "خۆرشتی پەتاتە", p: 2.5, c: 14, f: 3.5, cal: 95, cat: "Kurdish Dish"},
+            {en: "Khorisht Shalgam (Turnip Stew)", ku: "خۆرشتی شێلم", p: 2, c: 8, f: 1.5, cal: 55, cat: "Kurdish Dish"},
+            {en: "Khorisht Kadu (Zucchini Stew)", ku: "خۆرشتی کولەکە", p: 2.1, c: 6.5, f: 1.8, cal: 50, cat: "Kurdish Dish"},
+            {en: "Khorisht Rwas (Rhubarb Stew)", ku: "خۆرشتی ڕێواس", p: 1.5, c: 7, f: 1.6, cal: 48, cat: "Kurdish Dish"},
+            {en: "Sarma / Malfouf Kurdish", ku: "سەرمە / کەلەمی پڕکراو", p: 3.8, c: 14, f: 5.0, cal: 115, cat: "Kurdish Dish"},
+            {en: "Seng u Dag gisht (Chicken Stew)", ku: "سنگ و ڕانی مریشک", p: 11, c: 5, f: 7.5, cal: 135, cat: "Kurdish Dish"},
+            {en: "Kebab Erbil / Kurdish Kebab", ku: "کەبابی کوردی / هەولێر", p: 18, c: 2, f: 20, cal: 260, cat: "Kurdish Dish"},
+            {en: "Tikka Beef (Gisht Sorkraw)", ku: "تیکەی گۆشت / گۆشتی سوورکراوە", p: 24, c: 1, f: 12, cal: 210, cat: "Kurdish Dish"},
+            {en: "Tikka Lamb", ku: "تیکەی گۆشتی مەڕ", p: 22, c: 1, f: 17, cal: 245, cat: "Kurdish Dish"},
+            {en: "Gisht Beryan (Roast Lamb)", ku: "گۆشتی بریان", p: 25, c: 0, f: 20, cal: 280, cat: "Kurdish Dish"},
+            {en: "Pacha Kurdish (Sheep Trotters/Head)", ku: "پاچەی کوردی", p: 16, c: 1, f: 18, cal: 230, cat: "Kurdish Dish"},
+            {en: "Kalane (Kurdish Wild Leek Bread)", ku: "کەلێنە / کەڵانە", p: 6, c: 38, f: 5, cal: 220, cat: "Kurdish Dish"},
+            {en: "Nani Tiri (Thin Kurdish Bread)", ku: "نانی تیرێ", p: 8.5, c: 52, f: 2.5, cal: 265, cat: "Kurdish Dish"},
+            {en: "Nani Hawrami / Saji", ku: "نانی سەجی / هەورامی", p: 8, c: 50, f: 2.8, cal: 255, cat: "Kurdish Dish"},
+            {en: "Kilik / Kulira Kurdish", ku: "کۆلێرەی کوردی", p: 7.5, c: 48, f: 2.2, cal: 240, cat: "Kurdish Dish"},
+            {en: "Gezine / Wild Spring Greens", ku: "گەزینە / گژوگیای بەهارە", p: 3, c: 6, f: 0.5, cal: 40, cat: "Kurdish Dish"},
+            {en: "Kangar (Sautéed Wild Artichoke)", ku: "کەنگر / کەنگری سوورکراوە", p: 2.5, c: 8, f: 2.8, cal: 65, cat: "Kurdish Dish"},
+            {en: "Rwas (Wild Rhubarb Fresh)", ku: "ڕێواسی تازە", p: 0.9, c: 4.5, f: 0.2, cal: 21, cat: "Kurdish Dish"},
+            {en: "Gloz (Wild Mushroom)", ku: "قارچکی کێوی / گلووز", p: 3.2, c: 4, f: 0.3, cal: 30, cat: "Kurdish Dish"},
+
+            // Kurdish Dairy & Drinks
+            {en: "Mast Kurdish (Kurdish Yogurt)", ku: "مەستی کوردی", p: 3.8, c: 4.7, f: 4.0, cal: 68, cat: "Kurdish Dairy"},
+            {en: "Masti Chewr (Full Fat Yogurt)", ku: "مەستی چەور", p: 3.5, c: 4.5, f: 6.0, cal: 88, cat: "Kurdish Dairy"},
+            {en: "Dough / Mastaw (Yogurt Drink)", ku: "دۆ / مەستاو", p: 1.5, c: 2, f: 1.5, cal: 35, cat: "Kurdish Dairy"},
+            {en: "Panir Kurdish (Kurdish Cheese)", ku: "پەنێری کوردی", p: 18, c: 2, f: 21, cal: 265, cat: "Kurdish Dairy"},
+            {en: "Lorek / Cottage Cheese", ku: "لۆڕک", p: 12, c: 3, f: 5.0, cal: 105, cat: "Kurdish Dairy"},
+            {en: "Keshk (Dried Yogurt Balls)", ku: "کەشکی وشک", p: 22, c: 18, f: 15, cal: 290, cat: "Kurdish Dairy"},
+            {en: "Sarkeshk / Sereshk (Clotted Cream)", ku: "سەرشیر / توێژ", p: 2, c: 3, f: 36, cal: 340, cat: "Kurdish Dairy"},
+            {en: "Kurdish Tea (Cha)", ku: "چای کوردی", p: 0.1, c: 0.2, f: 0.0, cal: 2, cat: "Kurdish Drink"},
+            {en: "Qazwan (Pistacia Terebinthus Coffee)", ku: "قەزوان / قاوەی قەزوان", p: 1.2, c: 3.5, f: 2.8, cal: 45, cat: "Kurdish Drink"},
+
+            // Sweets
+            {en: "Lokum Kurdish (Turkish Delight)", ku: "لوقم / ڕەحەت ئەللوقوم", p: 0.5, c: 85, f: 0.2, cal: 350, cat: "Kurdish Sweet"},
+            {en: "Gez (Kurdish Manna Sweet)", ku: "گەز / گەزەنگەبین", p: 2, c: 78, f: 1.5, cal: 320, cat: "Kurdish Sweet"},
+            {en: "Halwa Kurdish (Flour Halwa)", ku: "حلوای کوردی", p: 3, c: 58, f: 15, cal: 380, cat: "Kurdish Sweet"},
+            {en: "Halwa Arsh (Sesame Halwa)", ku: "حلوای ڕاشی", p: 10, c: 48, f: 31, cal: 510, cat: "Kurdish Sweet"},
+            {en: "Baklava Kurdish", ku: "بەقلاوەی کوردی", p: 5, c: 55, f: 20, cal: 420, cat: "Kurdish Sweet"},
+            {en: "Sujuk Walnut Sweet (Mawizh)", ku: "سوجوقی گوێز / مەوێژ", p: 3.5, c: 62, f: 11, cal: 360, cat: "Kurdish Sweet"},
+
+            // Cooked Food & Whole Grains
+            {en: "Grilled Chicken Breast", ku: "برژاو سنگی مریشک", p: 31, c: 3.6, f: 3.5, cal: 165, cat: "Cooked Food"},
+            {en: "Roasted Chicken Thigh", ku: "برژاو لە فڕن ڕانی مریشک", p: 24, c: 8, f: 9.5, cal: 209, cat: "Cooked Food"},
+            {en: "Boiled Chicken Wings", ku: "کوڵاو باڵی مریشک", p: 23, c: 8.1, f: 9.0, cal: 203, cat: "Cooked Food"},
+            {en: "Pan-Seared Turkey Breast", ku: "سوورکراوە لە تاوە سنگی قەل", p: 29, c: 2.1, f: 1.2, cal: 135, cat: "Cooked Food"},
+            {en: "Roast Beef Tenderloin", ku: "گۆشتی فیلیەی گاو", p: 26, c: 10, f: 6.0, cal: 198, cat: "Cooked Food"},
+            {en: "Grilled Sirloin Steak", ku: "ستیکی گۆشتی گاو", p: 27, c: 12, f: 7.0, cal: 218, cat: "Cooked Food"},
+            {en: "Grilled Lamb Chop", ku: "پەڕەی گۆشتی مەڕ", p: 24, c: 15, f: 9.5, cal: 235, cat: "Cooked Food"},
+            {en: "Baked Salmon Fillet", ku: "فیلیەی ماسی سەلمۆن", p: 22, c: 12, f: 7.8, cal: 206, cat: "Cooked Food"},
+            {en: "Grilled Cod Fillet", ku: "فیلیەی ماسی کۆد", p: 20, c: 0.9, f: 0.6, cal: 89, cat: "Cooked Food"},
+            {en: "Boiled Shrimp", ku: "جەمبەری / ڕۆبیان", p: 24, c: 0.3, f: 0.2, cal: 99, cat: "Cooked Food"},
+            {en: "Boiled White Rice", ku: "برنجی سپی", p: 2.7, c: 28, f: 0.3, cal: 130, cat: "Cooked Food"},
+            {en: "Steamed Brown Rice", ku: "برنجی ئەسمەر", p: 2.6, c: 23, f: 0.9, cal: 111, cat: "Cooked Food"},
+            {en: "Cooked Quinoa", ku: "کینوا", p: 4.4, c: 21, f: 1.9, cal: 120, cat: "Cooked Food"},
+            {en: "Cooked Whole Wheat Pasta", ku: "پاستای گەنمی تەواو", p: 5.3, c: 26, f: 0.5, cal: 124, cat: "Cooked Food"},
+            {en: "Cooked Oatmeal", ku: "شۆفان", p: 2.5, c: 12, f: 1.5, cal: 71, cat: "Cooked Food"},
+            {en: "Boiled Chickpeas", ku: "نۆک", p: 8.9, c: 27, f: 2.6, cal: 164, cat: "Cooked Food"},
+            {en: "Boiled Red Lentils", ku: "نیسکی سوور", p: 9, c: 20, f: 0.4, cal: 116, cat: "Cooked Food"},
+            {en: "Pan-Seared Tofu", ku: "تۆفۆ", p: 8, c: 1.9, f: 4.2, cal: 76, cat: "Cooked Food"},
+            {en: "Steamed Broccoli", ku: "بڕۆکلی", p: 2.8, c: 7, f: 0.4, cal: 35, cat: "Cooked Food"},
+            {en: "Roasted Sweet Potato", ku: "پەتاتەی شیرین", p: 2, c: 21, f: 0.1, cal: 90, cat: "Cooked Food"},
+            {en: "Boiled Russet Potato", ku: "پەتاتە", p: 2, c: 20, f: 0.1, cal: 87, cat: "Cooked Food"},
+
+            // Fresh Fruits
+            {en: "Apple (Red Delicious)", ku: "سێو (Red Delicious)", p: 0.3, c: 13.8, f: 0.2, cal: 52, cat: "Fruit"},
+            {en: "Banana (Ripe)", ku: "مۆز (Ripe)", p: 1.1, c: 22.8, f: 0.3, cal: 89, cat: "Fruit"},
+            {en: "Orange (Valencia)", ku: "پرتەقاڵ (Valencia)", p: 0.9, c: 11.8, f: 0.1, cal: 47, cat: "Fruit"},
+            {en: "Strawberry", ku: "فراولە / شلیک", p: 0.7, c: 7.7, f: 0.3, cal: 32, cat: "Fruit"},
+            {en: "Blueberry", ku: "بڵوبێری / گۆزروان", p: 0.7, c: 14.5, f: 0.3, cal: 57, cat: "Fruit"},
+            {en: "Watermelon", ku: "شوتی", p: 0.6, c: 7.6, f: 0.2, cal: 30, cat: "Fruit"},
+            {en: "Cantaloupe Melon", ku: "کاڵەک", p: 0.8, c: 8.2, f: 0.2, cal: 34, cat: "Fruit"},
+            {en: "Pineapple", ku: "ئەنەناس", p: 0.5, c: 13.1, f: 0.1, cal: 50, cat: "Fruit"},
+            {en: "Mango", ku: "مانگۆ", p: 0.8, c: 15, f: 0.4, cal: 60, cat: "Fruit"},
+            {en: "Sweet Cherry", ku: "گێلاس", p: 1.1, c: 16, f: 0.2, cal: 63, cat: "Fruit"},
+            {en: "Grapes", ku: "تڕێ", p: 0.7, c: 18.1, f: 0.2, cal: 69, cat: "Fruit"},
+            {en: "Pomegranate Seeds", ku: "هەنار", p: 1.7, c: 18.7, f: 1.2, cal: 83, cat: "Fruit"},
+            {en: "Fig (Fresh)", ku: "هەنجیر (تازە)", p: 0.8, c: 19.2, f: 0.3, cal: 74, cat: "Fruit"},
+            {en: "Date (Medjool)", ku: "خورما (Medjool)", p: 1.8, c: 75, f: 0.2, cal: 277, cat: "Fruit"},
+            {en: "Avocado (Hass)", ku: "ئەڤۆکادۆ (Hass)", p: 2, c: 8.5, f: 14.7, cal: 160, cat: "Fruit"}
+        ];
+
+        const favoriteFoods = ["Kalane (Kurdish Wild Leek Bread)", "Grilled Chicken Breast", "Yaprax / Dolma Kurdish", "Kurdish Tea (Cha)", "Boiled White Rice"];
 
         let currentLang = 'en';
         const translations = {
             en: {
-                appTitle: "Food Tracker",
-                username: "Username",
-                password: "Password",
-                loginBtn: "Login",
-                loginTitle: "Login",
-                gotoSignup: "Sign Up",
-                signupTitle: "Sign Up",
-                saveBtn: "Save",
-                gotoLogin: "Already have an account? Login",
-                userLabel: "User",
-                logoutBtn: "Logout",
-                navFoodList: "List of food",
-                navDailyTracker: "My daily Food tracker",
-                foodNameLabel: "Food Name",
-                portionLabel: "Portion / Weight",
-                calories: "Calories",
-                carb: "Carb",
-                protein: "Protein",
-                food: "Food Name",
-                backBtn: "← Back to Main",
-                foodDbTitle: "Food Database",
-                records: "Records",
-                catAll: "All Categories",
-                thNameEn: "Food Name (English)",
-                thNameKu: "ناوی خۆراک (کوردی)",
-                thCat: "Category",
-                thCal: "Cal (100g)",
-                thCarb: "Carb (100g)",
-                thProt: "Protein (100g)",
-                dailyTrackerTitle: "Daily Food Tracker",
-                viewHistory: "View History Date:",
-                addBtn: "Add to Daily Log",
-                weight: "Weight",
-                timeAdded: "Time Added",
-                action: "Action",
-                total: "Total"
+                appTitle: "BeastTrack", username: "Username", password: "Password", loginBtn: "Login to Beast",
+                loginTitle: "Account Access", gotoSignup: "No account yet? Create one", signupTitle: "Create Account", saveBtn: "Register Now",
+                gotoLogin: "Already have an account? Login", userLabel: "User", logoutBtn: "Logout",
+                navFoodList: "Food Database", navDailyTracker: "Daily Tracker",
+                dailyTrackerTitle: "Daily Performance", viewHistory: "Date:", quickAddTitle: "⚡ Quick Add Kurdish Staples",
+                scanBtn: "Scan Barcode / Camera", foodNameLabel: "Food / Dish Name", portionLabel: "Weight / Quantity",
+                addBtn: "Add to Daily Log", calories: "Calories", carb: "Carb", protein: "Protein",
+                food: "Food", weight: "Weight", timeAdded: "Time", action: "Del", total: "Total",
+                backBtn: "← Back", foodDbTitle: "Master Food Database", records: "Records", catAll: "All Categories",
+                thNameEn: "Name (EN)", thNameKu: "ناوی خۆراک (کوردی)", thCat: "Category",
+                thCal: "Cal (100g)", thCarb: "Carb (100g)", thProt: "Prot (100g)"
             },
             ku: {
-                appTitle: "تۆمارکەری خۆراک",
-                username: "ناوی بەکارهێنەر",
-                password: "وشەی تێپەڕ",
-                loginBtn: "چوونە ژوورەوە",
-                loginTitle: "چوونە ژوورەوە",
-                gotoSignup: "دروستکردنی هەژمار",
-                signupTitle: "دروستکردنی هەژمار",
-                saveBtn: "پاشەکەوتکردن",
-                gotoLogin: "هەژمارت هەیە؟ بچۆ ژوورەوە",
-                userLabel: "بەکارهێنەر",
-                logoutBtn: "دەرچوون",
-                navFoodList: "لیستی خۆراکەکان",
-                navDailyTracker: "تۆماری ڕۆژانەی خۆراک",
-                foodNameLabel: "ناوی خۆراک",
-                portionLabel: "بڕ / کێش",
-                calories: "کالۆری",
-                carb: "کاربۆهیدرات",
-                protein: "پڕۆتین",
-                food: "ناوی خۆراک",
-                backBtn: "← گەڕانەوە بۆ سەرەکی",
-                foodDbTitle: "داتابەیسی خۆراک",
-                records: "تۆمار",
-                catAll: "هەموو جۆرەکان",
-                thNameEn: "ناوی خۆراک (ئینگلیزی)",
-                thNameKu: "ناوی خۆراک (کوردی)",
-                thCat: "جۆر",
-                thCal: "کالۆری (١٠٠گم)",
-                thCarb: "کارب (١٠٠گم)",
-                thProt: "پڕۆتین (١٠٠گم)",
-                dailyTrackerTitle: "تۆماری ڕۆژانەی خۆراک",
-                viewHistory: "بینینی مێژوو:",
-                addBtn: "تۆمارکردن بۆ ئەمڕۆ",
-                weight: "کێش",
-                timeAdded: "کات",
-                action: "کردار",
-                total: "کۆی گشتی"
+                appTitle: "تۆمارکەری بیست", username: "ناوی بەکارهێنەر", password: "وشەی تێپەڕ", loginBtn: "چوونە ژوورەوە",
+                loginTitle: "چوونە ژوورەوە بۆ هەژمار", gotoSignup: "هەژمارت نییە؟ دروستی بکە", signupTitle: "دروستکردنی هەژمار", saveBtn: "تۆمارکردن",
+                gotoLogin: "هەژمارت هەیە؟ بچۆ ژوورەوە", userLabel: "بەکارهێنەر", logoutBtn: "دەرچوون",
+                navFoodList: "داتابەیسی خۆراک", navDailyTracker: "تۆماری ڕۆژانە",
+                dailyTrackerTitle: "ئاستی ڕۆژانە", viewHistory: "بەروار:", quickAddTitle: "⚡ خۆراکە باوە کوردییەکان",
+                scanBtn: "خوێندنەوەی بارکۆد", foodNameLabel: "ناوی خۆراک / کاڵا", portionLabel: "کێش / قەبارە",
+                addBtn: "زیادکردن بۆ ڕۆژانە", calories: "کالۆری", carb: "کاربۆهیدرات", protein: "پڕۆتین",
+                food: "خۆراک", weight: "کێش", timeAdded: "کات", action: "سڕینەوە", total: "کۆی گشتی",
+                backBtn: "← گەڕانەوە", foodDbTitle: "داتابەیسی سەرەکی", records: "تۆمار", catAll: "هەمووی",
+                thNameEn: "ئینگلیزی", thNameKu: "ناوی کوردی", thCat: "جۆر",
+                thCal: "کالۆری", thCarb: "کارب", thProt: "پڕۆتین"
             }
         };
 
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'ku' : 'en';
             document.body.dir = currentLang === 'ku' ? 'rtl' : 'ltr';
-            document.querySelector('.lang-btn').innerText = currentLang === 'en' ? 'Kurdish / کوردی' : 'English / ئینگلیزی';
-            
+            document.getElementById('langBtnText').innerText = currentLang === 'en' ? 'کوردی' : 'English';
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (translations[currentLang][key]) {
-                    el.innerText = translations[currentLang][key];
-                }
+                if (translations[currentLang][key]) el.innerText = translations[currentLang][key];
             });
-        }
-
-        const foodDatabase = [
-            // Rule 1 Supplement Line
-            {en: "Rule 1 R1 Protein WPI Chocolate Fudge (5lb)", ku: "ڕوڵ وەن ئایزۆلێت چۆکۆلێت ٥ پاوەند", p: 86.2, c: 3.4, cal: 379, cat: "Rule 1 Protein", barcode: "858364003316"},
-            {en: "Rule 1 R1 Protein WPI Chocolate Fudge (2.5lb)", ku: "ڕوڵ وەن ئایزۆلێت چۆکۆلێت ٢.٥ پاوەند", p: 86.2, c: 3.4, cal: 379, cat: "Rule 1 Protein", barcode: "858364003323"},
-            {en: "Rule 1 R1 Protein WPI Vanilla Butter (5lb)", ku: "ڕوڵ وەن ئایزۆلێت ڤانێلا ٥ پاوەند", p: 85.7, c: 3.6, cal: 393, cat: "Rule 1 Protein", barcode: "858364003293"},
-            {en: "Rule 1 R1 Protein WPI Vanilla Butter (2.5lb)", ku: "ڕوڵ وەن ئایزۆلێت ڤانێلا ٢.٥ پاوەند", p: 85.7, c: 3.6, cal: 393, cat: "Rule 1 Protein", barcode: "858364003309"},
-            {en: "Rule 1 R1 Protein WPI Strawberries & Creme (5lb)", ku: "ڕوڵ وەن ئایزۆلێت فرەولە ٥ پاوەند", p: 86.2, c: 3.4, cal: 379, cat: "Rule 1 Protein", barcode: "858364003330"},
-            {en: "Rule 1 R1 Protein WPI Cookies & Creme (5lb)", ku: "ڕوڵ وەن ئایزۆلێت کێک و کرێم ٥ پاوەند", p: 85.7, c: 3.6, cal: 393, cat: "Rule 1 Protein", barcode: "858364003378"},
-            {en: "Rule 1 R1 Whey Blend Chocolate Fudge (5lb)", ku: "ڕوڵ وەن بڵێند چۆکۆلێت ٥ پاوەند", p: 72.7, c: 12.1, cal: 394, cat: "Rule 1 Protein", barcode: "858364003439"},
-            {en: "Rule 1 R1 Whey Blend Vanilla Ice Cream (5lb)", ku: "ڕوڵ وەن بڵێند ڤانێلا ٥ پاوەند", p: 72.7, c: 9.1, cal: 394, cat: "Rule 1 Protein", barcode: "858364003415"},
-            {en: "Rule 1 R1 LBS Mass Gainer Chocolate (12lb)", ku: "ڕوڵ وەن گەینەر مەس چۆکۆلێت ١٢ پاوەند", p: 14.5, c: 73.6, cal: 367, cat: "Rule 1 Protein", barcode: "858364003668"},
-            {en: "Rule 1 R1 Creatine Monohydrate Unflavored", ku: "ڕوڵ وەن کریاتین مۆنۆهیدرات بێ تام", p: 0.0, c: 0.0, cal: 0, cat: "Rule 1 Protein", barcode: "858364003590"},
-
-            // Traditional Dishes & Kurdish Items
-            {en: "Biryani Kurdish", ku: "بریانی کوردی", p: 8.5, c: 24, cal: 185, cat: "Kurdish Dish"},
-            {en: "Yaprax / Dolma Kurdish", ku: "یاپراخ / دۆڵمەی کوردی", p: 4.5, c: 18, cal: 145, cat: "Kurdish Dish"},
-            {en: "Kifte Kurdish (Stuffed)", ku: "کفتەی کوردی", p: 12, c: 15, cal: 210, cat: "Kurdish Dish"},
-            {en: "Shorba Nisk (Lentil Soup)", ku: "شۆربای نیسک", p: 6.5, c: 14, cal: 95, cat: "Kurdish Dish"},
-            {en: "Tashrib Lamb", ku: "تەشریبی گۆشتی مەڕ", p: 15, c: 10, cal: 230, cat: "Kurdish Dish"},
-            {en: "Khorisht Bamiya (Okra Stew)", ku: "خۆرشتی بامیە", p: 3.2, c: 7.5, cal: 65, cat: "Kurdish Dish"},
-            {en: "Kebab Erbil / Kurdish Kebab", ku: "کەبابی کوردی / هەولێر", p: 18, c: 2, cal: 260, cat: "Kurdish Dish"},
-            {en: "Kalane (Kurdish Wild Leek Bread)", ku: "کەلێنە / کەڵانە", p: 6, c: 38, cal: 220, cat: "Kurdish Dish"},
-            {en: "Mast Kurdish (Kurdish Yogurt)", ku: "مەستی کوردی", p: 3.8, c: 4.7, cal: 68, cat: "Kurdish Dairy"},
-            {en: "Panir Kurdish (Kurdish Cheese)", ku: "پەنێری کوردی", p: 18, c: 2, cal: 265, cat: "Kurdish Dairy"},
-            {en: "Dough / Mastaw (Yogurt Drink)", ku: "دۆ / مەستاو", p: 1.5, c: 2, cal: 35, cat: "Kurdish Dairy"},
-            {en: "Kurdish Tea (Cha)", ku: "چای کوردی", p: 0.1, c: 0.2, cal: 2, cat: "Kurdish Drink"},
-            {en: "Baklava Kurdish", ku: "بەقلاوەی کوردی", p: 5, c: 55, cal: 420, cat: "Kurdish Sweet"},
-            {en: "Grilled Chicken Breast", ku: "برژاو سنگی مریشک", p: 31, c: 3.6, cal: 165, cat: "Cooked Food"},
-            {en: "Boiled White Rice", ku: "کوڵاو برنجی سپی", p: 2.7, c: 28, cal: 130, cat: "Cooked Food"},
-            {en: "Cooked Oatmeal", ku: "لێنراو شۆفان", p: 2.5, c: 12, cal: 71, cat: "Cooked Food"},
-            {en: "Steamed Broccoli", ku: "بە هەڵم کوڵاو بڕۆکلی", p: 2.8, c: 7, cal: 35, cat: "Cooked Food"},
-            {en: "Apple (Red Delicious)", ku: "سێو (Red Delicious)", p: 0.3, c: 13.8, cal: 52, cat: "Fruit"},
-            {en: "Banana (Ripe)", ku: "مۆز (Ripe)", p: 1.1, c: 22.8, cal: 89, cat: "Fruit"}
-        ];
-
-        let currentUser = null;
-        let currentUserIsAdmin = false;
-        let selectedTrackerDate = getTodayDateString();
-        let html5QrCode = null;
-        let scannerTarget = 'tracker';
-        let pendingScannedItem = null;
-
-        function getTodayDateString() {
-            return new Date().toISOString().split('T')[0];
-        }
-
-        function getUserLogKey() {
-            return `food_logs_${currentUser}`;
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            renderQuickChips();
         }
 
         function populateFoodDatalist() {
             const datalist = document.getElementById('foodDatalist');
             datalist.innerHTML = '';
-            foodDatabase.forEach((food) => {
+            foodDatabase.forEach(food => {
                 const opt = document.createElement('option');
-                opt.value = `${food.en} (${food.ku || food.en})`;
+                opt.value = food.ku ? `${food.en} (${food.ku})` : food.en;
                 datalist.appendChild(opt);
             });
         }
@@ -704,78 +1401,67 @@
         function convertUnit(inputId, selectId) {
             const mult = parseFloat(document.getElementById(selectId).value) || 1;
             const input = document.getElementById(inputId);
-            if (mult > 1 && (!input.value || input.value == '100')) {
-                input.value = 1;
-            }
+            if (mult > 1 && (!input.value || input.value == '100')) input.value = 1;
         }
 
         function getCalculatedGrams(inputId, selectId) {
             const qty = parseFloat(document.getElementById(inputId).value) || 0;
-            const multiplier = parseFloat(document.getElementById(selectId).value) || 1;
-            return qty * multiplier;
+            const mult = parseFloat(document.getElementById(selectId).value) || 1;
+            return qty * mult;
+        }
+
+        function renderQuickChips() {
+            const container = document.getElementById('quickChips');
+            container.innerHTML = '';
+            favoriteFoods.forEach(name => {
+                const item = foodDatabase.find(f => f.en === name);
+                if (!item) return;
+                const chip = document.createElement('div');
+                chip.className = 'quick-chip';
+                chip.innerText = currentLang === 'ku' && item.ku ? item.ku : item.en;
+                chip.onclick = () => {
+                    document.getElementById('trackerFoodInput').value = item.ku ? `${item.en} (${item.ku})` : item.en;
+                    document.getElementById('trackerFoodWeight').value = '100';
+                };
+                container.appendChild(chip);
+            });
         }
 
         function findFoodByInput(val) {
             if (!val) return null;
-            const cleanedVal = val.trim().toLowerCase();
+            const cleaned = val.trim().toLowerCase();
             return foodDatabase.find(food => {
-                const kuVal = food.ku || food.en;
-                const displayName = `${food.en} (${kuVal})`.toLowerCase();
-                return displayName === cleanedVal || food.en.toLowerCase() === cleanedVal || kuVal.toLowerCase() === cleanedVal;
+                const disp = (food.ku ? `${food.en} (${food.ku})` : food.en).toLowerCase();
+                return disp === cleaned || food.en.toLowerCase() === cleaned || (food.ku && food.ku.toLowerCase() === cleaned);
             });
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('foodTableBody');
-            const search = document.getElementById('tableSearch').value.toLowerCase();
-            const cat = document.getElementById('categoryFilter').value;
-
-            tbody.innerHTML = '';
-
-            const filtered = foodDatabase.filter(item => {
-                const kuVal = item.ku || '';
-                const matchesSearch = item.en.toLowerCase().includes(search) || kuVal.includes(search);
-                const matchesCat = !cat || item.cat === cat;
-                return matchesSearch && matchesCat;
-            });
-
-            document.getElementById('recordCount').innerText = filtered.length;
-
-            filtered.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${item.en}</strong></td>
-                    <td dir="rtl">${item.ku || '-'}</td>
-                    <td>${item.cat}</td>
-                    <td>${item.cal}</td>
-                    <td>${item.c}g</td>
-                    <td>${item.p}g</td>
-                `;
-                tbody.appendChild(tr);
-            });
+        function updateDockSelection(pageId) {
+            document.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active'));
+            if (pageId === 'dailyTrackerPage') document.getElementById('dockTracker')?.classList.add('active');
+            else if (pageId === 'listOfFoodPage') document.getElementById('dockDatabase')?.classList.add('active');
+            else if (pageId === 'mainPage') document.getElementById('dockCalculator')?.classList.add('active');
+            else if (pageId === 'profilePage') document.getElementById('dockProfile')?.classList.add('active');
         }
 
         function showPage(pageId) {
-            ['loginPage', 'signupPage', 'mainPage', 'listOfFoodPage', 'dailyTrackerPage'].forEach(id => {
-                document.getElementById(id).style.display = 'none';
+            ['loginPage', 'signupPage', 'mainPage', 'listOfFoodPage', 'dailyTrackerPage', 'adminPage', 'profilePage'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
             });
-
             document.getElementById(pageId).style.display = 'block';
-            document.getElementById('loginMsg').innerText = '';
-            document.getElementById('signupMsg').innerText = '';
+
+            const isAuth = pageId === 'loginPage' || pageId === 'signupPage';
+            document.getElementById('bottomDock').style.display = isAuth ? 'none' : 'flex';
+            if (!isAuth) updateDockSelection(pageId);
 
             document.querySelectorAll('.activeUserSpan').forEach(el => el.innerText = currentUser || '');
-            document.querySelectorAll('.adminOnly').forEach(el => el.style.display = currentUserIsAdmin ? 'inline-block' : 'none');
+            document.querySelectorAll('.adminOnly').forEach(el => el.style.display = currentUserIsAdmin ? 'inline-flex' : 'none');
 
-            if (pageId === 'listOfFoodPage') {
-                renderTable();
-            } else if (pageId === 'dailyTrackerPage') {
-                initTrackerPage();
-            }
-        }
-
-        function openFuturePage(pageId) {
-            showPage(pageId);
+            if (pageId === 'dailyTrackerPage') initTrackerPage();
+            else if (pageId === 'listOfFoodPage') renderTable();
+            else if (pageId === 'adminPage') loadAdminUsers();
+            else if (pageId === 'profilePage') renderProfileView();
         }
 
         function logout() {
@@ -785,181 +1471,167 @@
             showPage('loginPage');
         }
 
-        /* --- WATER & ACTIVITY WIDGET CONTROLS --- */
-        function getWaterKey() { return `water_${currentUser}_${selectedTrackerDate}`; }
-        function getStepKey() { return `steps_${currentUser}_${selectedTrackerDate}`; }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
 
-        function renderWidgets() {
-            const water = parseInt(localStorage.getItem(getWaterKey())) || 0;
-            const steps = parseInt(localStorage.getItem(getStepKey())) || 0;
-            document.getElementById('waterDisplay').innerText = water;
-            document.getElementById('stepDisplay').innerText = steps.toLocaleString();
+        function openCustomFoodModal() {
+            document.getElementById('custNameInput').value = '';
+            document.getElementById('custKuInput').value = '';
+            document.getElementById('custBarcodeInput').value = '';
+            document.getElementById('custCalInput').value = '';
+            document.getElementById('custProtInput').value = '';
+            document.getElementById('custCarbInput').value = '';
+            document.getElementById('custFatInput').value = '';
+            document.getElementById('customFoodModal').style.display = 'flex';
+        }
+
+        /* Profile & Macro Logic */
+        function renderProfileView() {
+            document.getElementById('profUsernameDisplay').innerText = currentUser || 'User';
+            document.getElementById('profAgeDisplay').innerText = userProfile.age;
+            document.getElementById('profHeightDisplay').innerText = userProfile.height;
+            document.getElementById('profWeightDisplay').innerText = userProfile.weight;
+            document.getElementById('profCalDisplay').innerText = userProfile.cal;
+            document.getElementById('profProtDisplay').innerText = userProfile.protein + 'g';
+            document.getElementById('profCarbDisplay').innerText = userProfile.carb + 'g';
+            document.getElementById('profFatDisplay').innerText = userProfile.fat + 'g';
+            document.getElementById('userAvatarImg').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser || 'User'}`;
+        }
+
+        function openEditProfileModal() {
+            document.getElementById('editAgeInput').value = userProfile.age;
+            document.getElementById('editHeightInput').value = userProfile.height;
+            document.getElementById('editWeightInput').value = userProfile.weight;
+            document.getElementById('targetModeSelect').value = userProfile.targetMode || 'auto';
+            document.getElementById('editCalInput').value = userProfile.cal;
+            document.getElementById('editProtInput').value = userProfile.protein;
+            document.getElementById('editCarbInput').value = userProfile.carb;
+            document.getElementById('editFatInput').value = userProfile.fat;
+            toggleTargetModeInputs();
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        function toggleTargetModeInputs() {
+            const mode = document.getElementById('targetModeSelect').value;
+            document.getElementById('autoTargetBox').style.display = mode === 'auto' ? 'block' : 'none';
+        }
+
+        function calculateAutoMacros() {
+            const age = parseFloat(document.getElementById('editAgeInput').value) || 20;
+            const height = parseFloat(document.getElementById('editHeightInput').value) || 175;
+            const weight = parseFloat(document.getElementById('editWeightInput').value) || 75;
+            const sex = document.getElementById('autoSexSelect').value;
+            const activityMult = parseFloat(document.getElementById('autoActivitySelect').value) || 1.375;
+            const goalDelta = parseFloat(document.getElementById('autoGoalSelect').value) || 0;
+
+            let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+            bmr += (sex === 'male') ? 5 : -161;
+
+            const tdee = Math.round(bmr * activityMult);
+            const targetCal = Math.max(1200, Math.round(tdee + goalDelta));
+
+            const targetProt = Math.round(weight * 1.8);
+            const targetFat = Math.round((targetCal * 0.25) / 9);
+            const remainingCalForCarbs = targetCal - ((targetProt * 4) + (targetFat * 9));
+            const targetCarb = Math.max(40, Math.round(remainingCalForCarbs / 4));
+
+            document.getElementById('editCalInput').value = targetCal;
+            document.getElementById('editProtInput').value = targetProt;
+            document.getElementById('editCarbInput').value = targetCarb;
+            document.getElementById('editFatInput').value = targetFat;
+        }
+
+        async function saveProfileAndTargets() {
+            userProfile.age = parseFloat(document.getElementById('editAgeInput').value) || 20;
+            userProfile.height = parseFloat(document.getElementById('editHeightInput').value) || 175;
+            userProfile.weight = parseFloat(document.getElementById('editWeightInput').value) || 75;
+            userProfile.targetMode = document.getElementById('targetModeSelect').value;
+            userProfile.cal = parseFloat(document.getElementById('editCalInput').value) || 2000;
+            userProfile.protein = parseFloat(document.getElementById('editProtInput').value) || 140;
+            userProfile.carb = parseFloat(document.getElementById('editCarbInput').value) || 225;
+            userProfile.fat = parseFloat(document.getElementById('editFatInput').value) || 70;
+
+            localStorage.setItem(`user_profile_${currentUser}`, JSON.stringify(userProfile));
+
+            try {
+                await supabaseClient.from('profiles').update({
+                    target_cal: userProfile.cal,
+                    target_protein: userProfile.protein,
+                    target_carb: userProfile.carb
+                }).eq('username', currentUser);
+            } catch (e) {}
+
+            closeModal('editProfileModal');
+            renderProfileView();
+            if (document.getElementById('dailyTrackerPage').style.display !== 'none') {
+                await fetchAndRenderCloudLogs();
+            }
+        }
+
+        /* Water & Steps Trackers */
+        function getWaterStorageKey() { return `water_${currentUser}_${selectedTrackerDate}`; }
+        function getStepsStorageKey() { return `steps_${currentUser}_${selectedTrackerDate}`; }
+
+        function loadDualTrackers() {
+            document.getElementById('waterValue').innerText = localStorage.getItem(getWaterStorageKey()) || 0;
+            document.getElementById('stepsValue').innerText = localStorage.getItem(getStepsStorageKey()) || 0;
         }
 
         function addWater(amount) {
-            let water = parseInt(localStorage.getItem(getWaterKey())) || 0;
-            water += amount;
-            localStorage.setItem(getWaterKey(), water);
-            renderWidgets();
+            let cur = parseInt(localStorage.getItem(getWaterStorageKey()) || '0', 10);
+            cur += amount;
+            localStorage.setItem(getWaterStorageKey(), cur);
+            document.getElementById('waterValue').innerText = cur;
         }
 
         function resetWater() {
-            localStorage.setItem(getWaterKey(), 0);
-            renderWidgets();
+            localStorage.setItem(getWaterStorageKey(), 0);
+            document.getElementById('waterValue').innerText = 0;
         }
 
         function addSteps(amount) {
-            let steps = parseInt(localStorage.getItem(getStepKey())) || 0;
-            steps += amount;
-            localStorage.setItem(getStepKey(), steps);
-            renderWidgets();
+            let cur = parseInt(localStorage.getItem(getStepsStorageKey()) || '0', 10);
+            cur += amount;
+            localStorage.setItem(getStepsStorageKey(), cur);
+            document.getElementById('stepsValue').innerText = cur;
         }
 
-        function resetSteps() {
-            localStorage.setItem(getStepKey(), 0);
-            renderWidgets();
-        }
-
-        /* --- ADD CUSTOM PRODUCT FEATURE --- */
-        function openAddFoodModal() {
-            document.getElementById('addFoodModal').style.display = 'flex';
-        }
-
-        function saveNewFoodProduct() {
-            const en = document.getElementById('newFoodEn').value.trim();
-            const ku = document.getElementById('newFoodKu').value.trim() || en;
-            const barcode = document.getElementById('newFoodBarcode').value.trim() || null;
-            const cat = document.getElementById('newFoodCat').value;
-            const cal = parseFloat(document.getElementById('newFoodCal').value) || 0;
-            const p = parseFloat(document.getElementById('newFoodProt').value) || 0;
-            const c = parseFloat(document.getElementById('newFoodCarb').value) || 0;
-
-            if (!en) {
-                alert('Please provide at least an English food name.');
-                return;
+        function promptManualSteps() {
+            const val = prompt("Enter total steps walked today:", document.getElementById('stepsValue').innerText);
+            if (val !== null && !isNaN(val)) {
+                const s = Math.max(0, parseInt(val, 10));
+                localStorage.setItem(getStepsStorageKey(), s);
+                document.getElementById('stepsValue').innerText = s;
             }
-
-            const newProduct = { en, ku, p, c, cal, cat, barcode };
-            foodDatabase.unshift(newProduct);
-            
-            let customItems = JSON.parse(localStorage.getItem('custom_added_products')) || [];
-            customItems.push(newProduct);
-            localStorage.setItem('custom_added_products', JSON.stringify(customItems));
-
-            populateFoodDatalist();
-            renderTable();
-            closeModal('addFoodModal');
-
-            document.getElementById('newFoodEn').value = '';
-            document.getElementById('newFoodKu').value = '';
-            document.getElementById('newFoodBarcode').value = '';
-            document.getElementById('newFoodCal').value = '';
-            document.getElementById('newFoodProt').value = '';
-            document.getElementById('newFoodCarb').value = '';
-
-            alert('Product added successfully!');
         }
 
-        function loadPersistedCustomFoods() {
-            let customItems = JSON.parse(localStorage.getItem('custom_added_products')) || [];
-            customItems.forEach(item => {
-                if (!foodDatabase.some(f => f.en === item.en)) {
-                    foodDatabase.unshift(item);
-                }
-            });
-        }
-
-        /* --- ADMIN USER MANAGEMENT FEATURE --- */
-        async function openAdminDashboard() {
-            if (!currentUserIsAdmin) {
-                alert('Access denied: Admin only.');
-                return;
-            }
-            document.getElementById('adminModal').style.display = 'flex';
-            await loadAdminUsersTable();
-        }
-
-        async function loadAdminUsersTable() {
-            const tbody = document.getElementById('adminUserTableBody');
-            tbody.innerHTML = '<tr><td colspan="4">Loading profiles...</td></tr>';
-
-            const { data: users, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error || !users) {
-                tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Error: ${error?.message || 'Failed to load'}</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = '';
-            users.forEach(u => {
-                const tr = document.createElement('tr');
-                const isApproved = u.approved ? '<span style="color:#10b981; font-weight:bold;">Approved</span>' : '<span style="color:#f59e0b; font-weight:bold;">Pending</span>';
-                const roleBadge = u.is_admin ? '<span style="color:#8b5cf6; font-weight:bold;">Admin</span>' : 'User';
-                const toggleApproveBtn = u.approved 
-                    ? `<button style="background:#e67e22; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="toggleUserApproval('${u.username}', false)">Revoke</button>`
-                    : `<button style="background:#10b981; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="toggleUserApproval('${u.username}', true)">Approve</button>`;
-
-                tr.innerHTML = `
-                    <td><strong>${u.username}</strong></td>
-                    <td>${isApproved}</td>
-                    <td>${roleBadge}</td>
-                    <td>${toggleApproveBtn}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function toggleUserApproval(username, approveStatus) {
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update({ approved: approveStatus })
-                .eq('username', username);
-
-            if (error) {
-                alert('Error updating user status: ' + error.message);
-                return;
-            }
-            await loadAdminUsersTable();
-        }
-
-        /* --- SUPABASE AUTHENTICATION --- */
+        /* Authentication */
         document.getElementById('signupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const username = document.getElementById('signupUsername').value.trim();
             const password = document.getElementById('signupPassword').value.trim();
 
-            const { data: existingUser } = await supabaseClient
-                .from('profiles')
-                .select('username')
-                .eq('username', username)
-                .maybeSingle();
-
+            const { data: existingUser } = await supabaseClient.from('profiles').select('username').eq('username', username).maybeSingle();
             if (existingUser) {
-                document.getElementById('signupMsg').style.color = '#ef4444';
+                document.getElementById('signupMsg').style.color = 'red';
                 document.getElementById('signupMsg').innerText = 'Username already exists!';
                 return;
             }
 
-            const { error } = await supabaseClient
-                .from('profiles')
-                .insert([{ username, password, approved: false, is_admin: false }]);
-
+            const { error } = await supabaseClient.from('profiles').insert([{ 
+                username, password, approved: false, is_admin: false, 
+                target_cal: 1633, target_protein: 148, target_carb: 84 
+            }]);
             if (error) {
-                document.getElementById('signupMsg').style.color = '#ef4444';
-                document.getElementById('signupMsg').innerText = 'Error creating account!';
+                document.getElementById('signupMsg').style.color = 'red';
+                document.getElementById('signupMsg').innerText = 'Error creating account: ' + error.message;
                 return;
             }
 
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                to_email: "redenmax12@gmail.com",
-                username: username
-            });
-
-            document.getElementById('signupMsg').style.color = '#f59e0b';
-            document.getElementById('signupMsg').innerText = 'Registration requested! Admin email sent.';
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: "redenmax12@gmail.com", username: username });
+            document.getElementById('signupMsg').style.color = 'orange';
+            document.getElementById('signupMsg').innerText = 'Registration requested! Admin approval required.';
         });
 
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -967,196 +1639,90 @@
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
 
-            const { data: user, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('username', username)
-                .eq('password', password)
-                .maybeSingle();
-
+            const { data: user, error } = await supabaseClient.from('profiles').select('*').eq('username', username).eq('password', password).maybeSingle();
             if (error || !user) {
-                document.getElementById('loginMsg').style.color = '#ef4444';
+                document.getElementById('loginMsg').style.color = 'red';
                 document.getElementById('loginMsg').innerText = 'Invalid username or password!';
                 return;
             }
 
             if (!user.approved) {
-                document.getElementById('loginMsg').style.color = '#f59e0b';
+                document.getElementById('loginMsg').style.color = 'orange';
                 document.getElementById('loginMsg').innerText = 'Your account is pending admin approval!';
                 return;
             }
 
             currentUser = user.username;
             currentUserIsAdmin = !!user.is_admin;
+
+            const savedProfile = localStorage.getItem(`user_profile_${currentUser}`);
+            if (savedProfile) {
+                userProfile = JSON.parse(savedProfile);
+            } else {
+                userProfile.cal = Number(user.target_cal) || 1633;
+                userProfile.protein = Number(user.target_protein) || 148;
+                userProfile.carb = Number(user.target_carb) || 84;
+            }
+
+            await loadCustomDishes();
             populateFoodDatalist();
             showPage('dailyTrackerPage');
         });
 
-        /* --- DAILY TRACKER & PROGRESS BARS --- */
+        /* Daily Tracking Dashboard */
         async function initTrackerPage() {
-            const today = getTodayDateString();
-            selectedTrackerDate = today;
-            document.getElementById('currentDateDisplay').innerText = `Date: ${today}`;
-            setupHistoryDropdown();
-            renderWidgets();
+            document.getElementById('historyDateSelect').value = selectedTrackerDate;
+            document.getElementById('currentDateDisplay').innerText = selectedTrackerDate;
+            renderQuickChips();
+            loadDualTrackers();
+            initChart();
+            updateProgressBars(0, 0, 0, 0);
             await fetchAndRenderCloudLogs();
-        }
-
-        function setupHistoryDropdown() {
-            const select = document.getElementById('historyDateSelect');
-            select.innerHTML = '';
-            
-            let userLogs = JSON.parse(localStorage.getItem(getUserLogKey())) || {};
-            const today = getTodayDateString();
-            if (!userLogs[today]) userLogs[today] = [];
-
-            const sortedDates = Object.keys(userLogs).sort().reverse();
-            sortedDates.forEach(dateStr => {
-                const opt = document.createElement('option');
-                opt.value = dateStr;
-                opt.textContent = dateStr === today ? `${dateStr} (Today)` : dateStr;
-                if (dateStr === selectedTrackerDate) opt.selected = true;
-                select.appendChild(opt);
-            });
         }
 
         async function changeTrackerDateView() {
             selectedTrackerDate = document.getElementById('historyDateSelect').value;
-            const today = getTodayDateString();
-            document.getElementById('currentDateDisplay').innerText = `Date: ${selectedTrackerDate}`;
+            document.getElementById('currentDateDisplay').innerText = selectedTrackerDate;
+            const today = new Date().toISOString().split('T')[0];
             document.getElementById('trackerInputArea').style.display = selectedTrackerDate !== today ? 'none' : 'block';
-            renderWidgets();
+            loadDualTrackers();
             await fetchAndRenderCloudLogs();
         }
 
         async function fetchAndRenderCloudLogs() {
-            let dayLogs = [];
+            const tbody = document.getElementById('trackerTableBody');
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Syncing with Beast cloud...</td></tr>';
 
-            // 1. Try Supabase cloud table first
-            const { data, error } = await supabaseClient
-                .from('food_logs')
-                .select('*')
-                .eq('username', currentUser)
-                .eq('date', selectedTrackerDate)
-                .order('id', { ascending: true });
-
-            if (!error && data && data.length > 0) {
-                dayLogs = data;
-            } else {
-                // 2. Fallback to localStorage
-                let userLogs = JSON.parse(localStorage.getItem(getUserLogKey())) || {};
-                dayLogs = userLogs[selectedTrackerDate] || [];
-            }
-
-            renderTrackerRows(dayLogs);
-        }
-
-        async function addFoodToDailyLog() {
-            const foodInputValue = document.getElementById('trackerFoodInput').value;
-            const weight = getCalculatedGrams('trackerFoodWeight', 'trackerFoodUnit');
-            const item = findFoodByInput(foodInputValue);
-
-            if (!item || !weight || weight <= 0) {
-                alert('Please select a valid food item and enter a valid quantity.');
+            const { data: logs, error } = await supabaseClient.from('food_logs').select('*').eq('username', currentUser).eq('date', selectedTrackerDate).order('id', { ascending: true });
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="8" style="color:red;text-align:center;">Cloud sync error: ' + error.message + '</td></tr>';
                 return;
             }
 
-            const cal = parseFloat(((item.cal / 100) * weight).toFixed(1));
-            const carb = parseFloat(((item.c / 100) * weight).toFixed(1));
-            const protein = parseFloat(((item.p / 100) * weight).toFixed(1));
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const displayName = currentLang === 'ku' && item.ku ? item.ku : item.en;
-
-            const logEntry = {
-                id: Date.now(),
-                username: currentUser,
-                date: selectedTrackerDate,
-                name: displayName,
-                weight: weight,
-                protein: protein,
-                carb: carb,
-                cal: cal,
-                time: timeStr
-            };
-
-            // Save to localStorage
-            const today = getTodayDateString();
-            let userLogs = JSON.parse(localStorage.getItem(getUserLogKey())) || {};
-            if (!userLogs[today]) userLogs[today] = [];
-            userLogs[today].push(logEntry);
-            localStorage.setItem(getUserLogKey(), JSON.stringify(userLogs));
-
-            // Sync to Supabase cloud
-            await supabaseClient.from('food_logs').insert([logEntry]);
-
-            document.getElementById('trackerFoodWeight').value = '';
-            document.getElementById('trackerFoodInput').value = '';
-            await fetchAndRenderCloudLogs();
-        }
-
-        async function deleteLogEntry(id) {
-            // Remove locally
-            let userLogs = JSON.parse(localStorage.getItem(getUserLogKey())) || {};
-            if (userLogs[selectedTrackerDate]) {
-                userLogs[selectedTrackerDate] = userLogs[selectedTrackerDate].filter(entry => entry.id !== id);
-                localStorage.setItem(getUserLogKey(), JSON.stringify(userLogs));
-            }
-
-            // Remove from Supabase
-            await supabaseClient.from('food_logs').delete().eq('id', id);
-
-            await fetchAndRenderCloudLogs();
-        }
-
-        function updateProgressBars(totCal, totProt, totCarb) {
-            const calPct = Math.min(100, Math.round((totCal / GOALS.cal) * 100));
-            const protPct = Math.min(100, Math.round((totProt / GOALS.protein) * 100));
-            const carbPct = Math.min(100, Math.round((totCarb / GOALS.carb) * 100));
-
-            const calFill = document.getElementById('barCalFill');
-            calFill.style.width = calPct + '%';
-            calFill.classList.toggle('over-limit', totCal > GOALS.cal);
-            document.getElementById('barCalText').innerText = `${totCal.toFixed(0)} / ${GOALS.cal} kcal`;
-            document.getElementById('barCalPct').innerText = `${Math.round((totCal / GOALS.cal) * 100)}%`;
-
-            const protFill = document.getElementById('barProtFill');
-            protFill.style.width = protPct + '%';
-            protFill.classList.toggle('over-limit', totProt > GOALS.protein);
-            document.getElementById('barProtText').innerText = `${totProt.toFixed(1)} / ${GOALS.protein}g`;
-            document.getElementById('barProtPct').innerText = `${Math.round((totProt / GOALS.protein) * 100)}%`;
-
-            const carbFill = document.getElementById('barCarbFill');
-            carbFill.style.width = carbPct + '%';
-            carbFill.classList.toggle('over-limit', totCarb > GOALS.carb);
-            document.getElementById('barCarbText').innerText = `${totCarb.toFixed(1)} / ${GOALS.carb}g`;
-            document.getElementById('barCarbPct').innerText = `${Math.round((totCarb / GOALS.carb) * 100)}%`;
-        }
-
-        function renderTrackerRows(dayLogs) {
-            const tbody = document.getElementById('trackerTableBody');
+            currentLogs = logs || [];
             tbody.innerHTML = '';
+            let totW = 0, totP = 0, totC = 0, totF = 0, totCal = 0;
+            const today = new Date().toISOString().split('T')[0];
 
-            let totW = 0, totP = 0, totC = 0, totCal = 0;
-
-            dayLogs.forEach((entry, idx) => {
-                totW += Number(entry.weight);
-                totP += Number(entry.protein);
-                totC += Number(entry.carb);
-                totCal += Number(entry.calories || entry.cal);
+            currentLogs.forEach((entry, idx) => {
+                totW += Number(entry.weight || 0);
+                totP += Number(entry.protein || 0);
+                totC += Number(entry.carb || 0);
+                const itemFat = Number(entry.fat || 0);
+                totF += itemFat;
+                totCal += Number(entry.calories || 0);
 
                 const tr = document.createElement('tr');
-                const isToday = selectedTrackerDate === getTodayDateString();
-                const deleteAction = isToday ? `<button style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="deleteLogEntry(${entry.id})">✕</button>` : '-';
-
+                const delBtn = selectedTrackerDate === today ? `<button style="background:none; border:none; color:#ef4444; cursor:pointer;" onclick="deleteCloudLog(${entry.id})"><i class="fa-solid fa-trash"></i></button>` : '-';
                 tr.innerHTML = `
                     <td>${idx + 1}</td>
                     <td><strong>${entry.name}</strong></td>
                     <td>${entry.weight}g</td>
                     <td>${entry.protein}g</td>
                     <td>${entry.carb}g</td>
-                    <td>${entry.calories || entry.cal}</td>
-                    <td>${entry.time}</td>
-                    <td>${deleteAction}</td>
+                    <td>${itemFat}g</td>
+                    <td>${entry.calories}</td>
+                    <td>${delBtn}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1164,188 +1730,255 @@
             document.getElementById('totalWeight').innerText = `${totW.toFixed(1)}g`;
             document.getElementById('totalProtein').innerText = `${totP.toFixed(1)}g`;
             document.getElementById('totalCarb').innerText = `${totC.toFixed(1)}g`;
+            document.getElementById('totalFat').innerText = `${totF.toFixed(1)}g`;
             document.getElementById('totalCal').innerText = totCal.toFixed(1);
 
-            updateProgressBars(totCal, totP, totC);
+            updateProgressBars(totCal, totP, totC, totF);
+            updateDonutChart(totP, totC, totF, totCal);
         }
 
-        function calculateNutrients() {
-            const foodInputValue = document.getElementById('foodInput').value;
-            const weight = getCalculatedGrams('foodWeight', 'foodUnit');
+        async function addFoodToDailyLog() {
+            const foodInputValue = document.getElementById('trackerFoodInput').value;
+            const weight = getCalculatedGrams('trackerFoodWeight', 'trackerFoodUnit');
             const item = findFoodByInput(foodInputValue);
 
             if (!item || weight <= 0) {
-                document.getElementById('resCal').innerText = '0';
-                document.getElementById('resCarb').innerText = '0g';
-                document.getElementById('resProtein').innerText = '0g';
-                document.getElementById('resName').innerText = '-';
+                alert('Please pick a food and enter quantity.');
                 return;
             }
 
-            document.getElementById('resCal').innerText = ((item.cal / 100) * weight).toFixed(1);
-            document.getElementById('resCarb').innerText = ((item.c / 100) * weight).toFixed(1) + 'g';
-            document.getElementById('resProtein').innerText = ((item.p / 100) * weight).toFixed(1) + 'g';
-            document.getElementById('resName').innerText = currentLang === 'ku' && item.ku ? item.ku : item.en;
-        }
+            const cal = parseFloat(((item.cal / 100) * weight).toFixed(1));
+            const carb = parseFloat(((item.c / 100) * weight).toFixed(1));
+            const protein = parseFloat(((item.p / 100) * weight).toFixed(1));
+            const fat = parseFloat((((item.f || 0) / 100) * weight).toFixed(1));
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        /* --- AI SNAP RECOGNITION (GEMINI 1.5 FLASH) --- */
-        function triggerAICamera() {
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
-                alert("تکایە کلیلی Gemini API لە ناو پەڕگەکەدا دابنێ.");
+            // Robust payload that gracefully handles databases without 'fat' column
+            let payload = {
+                username: currentUser,
+                date: selectedTrackerDate,
+                name: currentLang === 'ku' && item.ku ? item.ku : item.en,
+                weight: weight,
+                calories: cal,
+                protein: protein,
+                carb: carb,
+                fat: fat,
+                time: timeStr
+            };
+
+            let { error } = await supabaseClient.from('food_logs').insert([payload]);
+
+            if (error && error.message && error.message.includes("'fat'")) {
+                delete payload.fat;
+                const retry = await supabaseClient.from('food_logs').insert([payload]);
+                error = retry.error;
+            }
+
+            if (error) {
+                alert('Cloud save error: ' + error.message);
                 return;
             }
-            document.getElementById('aiCameraInput').click();
+
+            document.getElementById('trackerFoodWeight').value = '';
+            document.getElementById('trackerFoodInput').value = '';
+            await fetchAndRenderCloudLogs();
         }
 
-        function resizeAndConvertToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const maxDim = 800;
-                        let width = img.width;
-                        let height = img.height;
+        async function deleteCloudLog(id) {
+            const { error } = await supabaseClient.from('food_logs').delete().eq('id', id);
+            if (error) {
+                alert('Delete error: ' + error.message);
+                return;
+            }
+            await fetchAndRenderCloudLogs();
+        }
 
-                        if (width > height) {
-                            if (width > maxDim) {
-                                height *= maxDim / width;
-                                width = maxDim;
-                            }
-                        } else {
-                            if (height > maxDim) {
-                                width *= maxDim / height;
-                                height = maxDim;
-                            }
-                        }
+        function updateProgressBars(totCal, totProt, totCarb, totFat) {
+            const calPct = Math.min(100, Math.round((totCal / userProfile.cal) * 100));
+            const protPct = Math.min(100, Math.round((totProt / userProfile.protein) * 100));
+            const carbPct = Math.min(100, Math.round((totCarb / userProfile.carb) * 100));
+            const fatPct = Math.min(100, Math.round((totFat / userProfile.fat) * 100));
 
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
+            document.getElementById('barCalFill').style.width = calPct + '%';
+            document.getElementById('barCalText').innerText = `${totCal.toFixed(0)} / ${userProfile.cal} kcal`;
 
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                        resolve(dataUrl.split(',')[1]);
-                    };
-                    img.onerror = reject;
-                };
-                reader.onerror = reject;
+            document.getElementById('barProtFill').style.width = protPct + '%';
+            document.getElementById('barProtText').innerText = `${totProt.toFixed(1)} / ${userProfile.protein}g`;
+
+            document.getElementById('barCarbFill').style.width = carbPct + '%';
+            document.getElementById('barCarbText').innerText = `${totCarb.toFixed(1)} / ${userProfile.carb}g`;
+
+            document.getElementById('barFatFill').style.width = fatPct + '%';
+            document.getElementById('barFatText').innerText = `${totFat.toFixed(1)} / ${userProfile.fat}g`;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('macroChart').getContext('2d');
+            if (macroChartInstance) macroChartInstance.destroy();
+            macroChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Protein', 'Carbs', 'Fat'],
+                    datasets: [{
+                        data: [0, 0, 1],
+                        backgroundColor: ['#ef4444', '#8b5cf6', '#06b6d4'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '72%'
+                }
             });
         }
 
-        async function handleAIFoodPhoto(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const loadingBox = document.getElementById('aiLoadingBox');
-            loadingBox.style.display = 'block';
-
-            try {
-                if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
-                    throw new Error("تکایە کلیلی دروستی Gemini دابنێ.");
-                }
-
-                const base64Data = await resizeAndConvertToBase64(file);
-
-                const prompt = "Identify the food in this image. Estimate portion weight in grams, total calories, protein, carbs, and fat. Respond ONLY with a valid JSON object matching: {\"food_name_en\":\"Name\",\"food_name_ku\":\"ناوی کوردی\",\"weight_g\":150,\"calories\":250,\"protein\":20,\"carbs\":10,\"fat\":5}";
-
-                const requestBody = {
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
-                        ]
-                    }],
-                    generationConfig: {
-                        temperature: 0.2
-                    }
-                };
-
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': GEMINI_API_KEY,
-                        'Authorization': `Bearer ${GEMINI_API_KEY}`
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestBody)
-                    });
-                }
-
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => null);
-                    throw new Error(errData?.error?.message || `Server Error (${response.status})`);
-                }
-
-                const data = await response.json();
-                let rawJsonText = data.candidates[0].content.parts[0].text.trim();
-                rawJsonText = rawJsonText.replace(/```json|```/g, "").trim();
-                const result = JSON.parse(rawJsonText);
-
-                const displayName = currentLang === 'ku' && result.food_name_ku ? result.food_name_ku : result.food_name_en;
-
-                document.getElementById('trackerFoodInput').value = `${result.food_name_en} (${result.food_name_ku || result.food_name_en})`;
-                document.getElementById('trackerFoodWeight').value = Math.round(result.weight_g);
-                document.getElementById('trackerFoodUnit').value = "1";
-
-                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const logEntry = {
-                    id: Date.now(),
-                    username: currentUser,
-                    date: selectedTrackerDate,
-                    name: displayName,
-                    weight: result.weight_g,
-                    protein: result.protein,
-                    carb: result.carbs,
-                    cal: result.calories,
-                    time: timeStr
-                };
-
-                // LocalStorage save
-                const today = getTodayDateString();
-                let userLogs = JSON.parse(localStorage.getItem(getUserLogKey())) || {};
-                if (!userLogs[today]) userLogs[today] = [];
-                userLogs[today].push(logEntry);
-                localStorage.setItem(getUserLogKey(), JSON.stringify(userLogs));
-
-                // Cloud Supabase save
-                await supabaseClient.from('food_logs').insert([logEntry]);
-
-                alert(`سەرکەوتووانە زیادکرا!\nخۆراک: ${displayName}\nکالۆری: ${result.calories} kcal\nپڕۆتین: ${result.protein}g`);
-                await fetchAndRenderCloudLogs();
-
-            } catch (err) {
-                alert("هۆکاری ڕاستەقینەی کارنەکردن:\n" + err.message);
-                console.error(err);
-            } finally {
-                loadingBox.style.display = 'none';
-                input.value = '';
-            }
+        function updateDonutChart(totProt, totCarb, totFat, totCal) {
+            if (!macroChartInstance) return;
+            const protCal = totProt * 4;
+            const carbCal = totCarb * 4;
+            const fatCal = totFat * 9;
+            macroChartInstance.data.datasets[0].data = [protCal, carbCal, fatCal];
+            macroChartInstance.update();
         }
 
-        /* --- BARCODE SCANNER ENGINE --- */
-        function openBarcodeScanner(target) {
+        function exportToCSV() {
+            if (!currentLogs || currentLogs.length === 0) {
+                alert("No records for this date.");
+                return;
+            }
+            let csv = "ID,Food Name,Weight (g),Protein (g),Carb (g),Fat (g),Calories (kcal),Time Logged\n";
+            currentLogs.forEach((l, i) => {
+                csv += `"${i+1}","${l.name}","${l.weight}","${l.protein}","${l.carb}","${l.fat || 0}","${l.calories}","${l.time}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `beast_log_${currentUser}_${selectedTrackerDate}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        /* Custom Dishes Persistence */
+        async function loadCustomDishes() {
+            try {
+                const { data: dishes } = await supabaseClient.from('custom_foods').select('*').eq('username', currentUser);
+                if (dishes) {
+                    dishes.forEach(d => {
+                        if (!foodDatabase.some(f => f.en === d.name)) {
+                            foodDatabase.unshift({ 
+                                en: d.name, 
+                                ku: d.ku || d.name, 
+                                p: Number(d.protein || 0), 
+                                c: Number(d.carb || 0), 
+                                f: Number(d.fat || 0), 
+                                cal: Number(d.calories || 0), 
+                                cat: "Custom Dish", 
+                                barcode: d.barcode || null 
+                            });
+                        }
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function saveCustomDish() {
+            const name = document.getElementById('custNameInput').value.trim();
+            const ku = document.getElementById('custKuInput').value.trim() || name;
+            const barcode = document.getElementById('custBarcodeInput').value.trim() || null;
+            const cal = parseFloat(document.getElementById('custCalInput').value) || 0;
+            const prot = parseFloat(document.getElementById('custProtInput').value) || 0;
+            const carb = parseFloat(document.getElementById('custCarbInput').value) || 0;
+            const fat = parseFloat(document.getElementById('custFatInput').value) || 0;
+
+            if (!name || cal <= 0) {
+                alert("Please specify food name and calories.");
+                return;
+            }
+
+            let payload = { 
+                username: currentUser, name: name, ku: ku, calories: cal, protein: prot, carb: carb, fat: fat, barcode: barcode 
+            };
+
+            let { error } = await supabaseClient.from('custom_foods').insert([payload]);
+
+            // Fallback if barcode or fat columns aren't created yet in DB
+            if (error && error.message && (error.message.includes("'barcode'") || error.message.includes("'fat'"))) {
+                delete payload.barcode;
+                delete payload.fat;
+                const retry = await supabaseClient.from('custom_foods').insert([payload]);
+                error = retry.error;
+            }
+
+            if (error) {
+                alert("Error saving custom dish: " + error.message);
+                return;
+            }
+
+            foodDatabase.unshift({ en: name, ku: ku, p: prot, c: carb, f: fat, cal: cal, cat: "Custom Dish", barcode: barcode });
+            populateFoodDatalist();
+            closeModal('customFoodModal');
+            alert(`"${name}" saved to your permanent database!`);
+        }
+
+        /* Admin Management */
+        async function loadAdminUsers() {
+            const tbody = document.getElementById('adminUserTableBody');
+            tbody.innerHTML = '<tr><td colspan="4">Loading profiles...</td></tr>';
+
+            // Avoid ordering by created_at in case it doesn't exist on profiles
+            const { data: users, error } = await supabaseClient.from('profiles').select('*');
+            if (error || !users) {
+                tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Error loading users: ${error?.message || 'Access denied'}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const isApproved = u.approved ? '<span style="color:#10b981; font-weight:700;">Active</span>' : '<span style="color:#f59e0b; font-weight:700;">Pending</span>';
+                const role = u.is_admin ? '<span style="color:#8b5cf6; font-weight:700;">Admin</span>' : 'User';
+                const btn = u.approved 
+                    ? `<button class="mini-btn" style="color:#ef4444;" onclick="toggleApproval('${u.username}', false)">Revoke</button>`
+                    : `<button class="mini-btn" style="color:#10b981;" onclick="toggleApproval('${u.username}', true)">Approve</button>`;
+
+                tr.innerHTML = `
+                    <td><strong>${u.username}</strong></td>
+                    <td>${isApproved}</td>
+                    <td>${role}</td>
+                    <td>${btn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function toggleApproval(username, status) {
+            await supabaseClient.from('profiles').update({ approved: status }).eq('username', username);
+            loadAdminUsers();
+        }
+
+        /* Camera Barcode Scanner */
+        async function openBarcodeScanner(target) {
             scannerTarget = target;
             document.getElementById('scannerModal').style.display = 'flex';
+
+            if (html5QrCode) {
+                try {
+                    await html5QrCode.stop();
+                    html5QrCode.clear();
+                } catch (e) {}
+            }
+
             html5QrCode = new Html5Qrcode("reader");
-            
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => onBarcodeScanned(decodedText.trim()),
-                (errorMessage) => {}
+                (text) => onBarcodeScanned(text.trim()),
+                () => {}
             ).catch(err => {
-                alert("Camera access error: " + err);
+                alert("Camera error: " + err);
                 stopBarcodeScanner();
             });
         }
@@ -1365,96 +1998,172 @@
 
         async function onBarcodeScanned(barcode) {
             stopBarcodeScanner();
+            let foundItem = foodDatabase.find(f => f.barcode === barcode);
 
-            let foundItem = null;
-
-            const localItem = foodDatabase.find(f => f.barcode === barcode);
-            if (localItem) {
-                foundItem = localItem;
-            } else {
+            if (!foundItem) {
                 try {
                     const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
                     const data = await res.json();
-
                     if (data.status === 1 && data.product) {
                         const p = data.product;
                         const name = p.product_name || "Packaged Food";
                         const cal = parseFloat(p.nutriments['energy-kcal_100g']) || 0;
                         const prot = parseFloat(p.nutriments['proteins_100g']) || 0;
                         const carb = parseFloat(p.nutriments['carbohydrates_100g']) || 0;
+                        const fat = parseFloat(p.nutriments['fat_100g']) || 0;
 
-                        foundItem = { en: name, ku: name, p: prot, c: carb, cal: cal, barcode: barcode, cat: "Packaged" };
-                        foodDatabase.push(foundItem);
+                        foundItem = { en: name, ku: name, p: prot, c: carb, f: fat, cal: cal, barcode: barcode, cat: "Packaged" };
+                        foodDatabase.unshift(foundItem);
                         populateFoodDatalist();
                     }
-                } catch (err) {
-                    console.error("Barcode lookup error:", err);
-                }
+                } catch (e) {}
             }
 
             if (foundItem) {
                 if (scannerTarget === 'main') {
-                    document.getElementById('foodInput').value = `${foundItem.en} (${foundItem.ku || foundItem.en})`;
+                    document.getElementById('mainFoodInput').value = `${foundItem.en} (${foundItem.ku || foundItem.en})`;
                     calculateNutrients();
                 } else {
                     pendingScannedItem = foundItem;
-                    const titleName = currentLang === 'ku' && foundItem.ku ? foundItem.ku : foundItem.en;
-                    document.getElementById('scannedProductName').innerText = titleName;
-                    document.getElementById('scannedProductMacros').innerText = `Per 100g: ${foundItem.cal} kcal | P: ${foundItem.p}g | C: ${foundItem.c}g`;
+                    const title = currentLang === 'ku' && foundItem.ku ? foundItem.ku : foundItem.en;
+                    document.getElementById('scannedProductName').innerText = title;
+                    document.getElementById('scannedProductMacros').innerText = `Per 100g: ${foundItem.cal} kcal | P: ${foundItem.p}g | C: ${foundItem.c}g | F: ${foundItem.f || 0}g`;
                     document.getElementById('scannedQtyInput').value = foundItem.cat === "Rule 1 Protein" ? "1" : "100";
                     document.getElementById('scannedUnitSelect').value = foundItem.cat === "Rule 1 Protein" ? "33" : "1";
                     document.getElementById('scannedProductModal').style.display = 'flex';
                 }
             } else {
-                alert("this product not available");
+                alert("Product barcode not found in local or international registry.");
             }
         }
 
         async function confirmScannedFoodAdd() {
             if (!pendingScannedItem) return;
-
             const qty = parseFloat(document.getElementById('scannedQtyInput').value) || 0;
-            const unitMult = parseFloat(document.getElementById('scannedUnitSelect').value) || 1;
-            const totalWeight = qty * unitMult;
+            const mult = parseFloat(document.getElementById('scannedUnitSelect').value) || 1;
+            const totalWeight = qty * mult;
 
-            if (totalWeight <= 0) {
-                alert("Please enter a valid quantity.");
-                return;
-            }
+            if (totalWeight <= 0) return;
 
             const cal = parseFloat(((pendingScannedItem.cal / 100) * totalWeight).toFixed(1));
             const carb = parseFloat(((pendingScannedItem.c / 100) * totalWeight).toFixed(1));
             const protein = parseFloat(((pendingScannedItem.p / 100) * totalWeight).toFixed(1));
+            const fat = parseFloat((((pendingScannedItem.f || 0) / 100) * totalWeight).toFixed(1));
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const titleName = currentLang === 'ku' && pendingScannedItem.ku ? pendingScannedItem.ku : pendingScannedItem.en;
 
-            const logEntry = {
-                id: Date.now(),
+            let payload = {
                 username: currentUser,
                 date: selectedTrackerDate,
-                name: titleName,
+                name: currentLang === 'ku' && pendingScannedItem.ku ? pendingScannedItem.ku : pendingScannedItem.en,
                 weight: totalWeight,
+                calories: cal,
                 protein: protein,
                 carb: carb,
-                cal: cal,
+                fat: fat,
                 time: timeStr
             };
 
-            const today = getTodayDateString();
-            let userLogs = JSON.parse(localStorage.getItem(getUserLogKey())) || {};
-            if (!userLogs[today]) userLogs[today] = [];
-            userLogs[today].push(logEntry);
-            localStorage.setItem(getUserLogKey(), JSON.stringify(userLogs));
+            let { error } = await supabaseClient.from('food_logs').insert([payload]);
 
-            await supabaseClient.from('food_logs').insert([logEntry]);
+            if (error && error.message && error.message.includes("'fat'")) {
+                delete payload.fat;
+                await supabaseClient.from('food_logs').insert([payload]);
+            }
 
             closeModal('scannedProductModal');
             pendingScannedItem = null;
             await fetchAndRenderCloudLogs();
         }
 
-        loadPersistedCustomFoods();
+        function calculateNutrients() {
+            const foodInputValue = document.getElementById('mainFoodInput').value;
+            const weight = getCalculatedGrams('mainFoodWeight', 'mainFoodUnit');
+            const item = findFoodByInput(foodInputValue);
+
+            if (!item || weight <= 0) {
+                document.getElementById('resCal').innerText = '0';
+                document.getElementById('resCarb').innerText = '0g';
+                document.getElementById('resProtein').innerText = '0g';
+                document.getElementById('resName').innerText = '-';
+                return;
+            }
+
+            document.getElementById('resCal').innerText = ((item.cal / 100) * weight).toFixed(1);
+            document.getElementById('resCarb').innerText = ((item.c / 100) * weight).toFixed(1) + 'g';
+            document.getElementById('resProtein').innerText = ((item.p / 100) * weight).toFixed(1) + 'g';
+            document.getElementById('resName').innerText = currentLang === 'ku' ? item.ku : item.en;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('foodTableBody');
+            const search = document.getElementById('tableSearch').value.toLowerCase();
+            const cat = document.getElementById('categoryFilter').value;
+
+            tbody.innerHTML = '';
+            const filtered = foodDatabase.filter(item => {
+                const kuVal = item.ku || '';
+                const matchesSearch = item.en.toLowerCase().includes(search) || kuVal.includes(search);
+                const matchesCat = !cat || item.cat === cat;
+                return matchesSearch && matchesCat;
+            });
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${item.en}</strong></td>
+                    <td dir="rtl">${item.ku || '-'}</td>
+                    <td>${item.cal}</td>
+                    <td>${item.p}g</td>
+                    <td>${item.c}g</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Auto-Update Engine (GitHub Commits API)
+        const GITHUB_REPO = "redenmax12-sketch/food-tracker";
+        async function checkAutoUpdate() {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/commits/main`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' },
+                    cache: 'no-store'
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const latestCommitSha = data.sha;
+                const storedCommitSha = localStorage.getItem('last_installed_commit');
+
+                if (!storedCommitSha) {
+                    localStorage.setItem('last_installed_commit', latestCommitSha);
+                    return;
+                }
+
+                if (storedCommitSha !== latestCommitSha) {
+                    localStorage.setItem('last_installed_commit', latestCommitSha);
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of registrations) await reg.unregister();
+                    }
+                    window.location.reload(true);
+                }
+            } catch (e) {}
+        }
+
+        window.addEventListener('load', checkAutoUpdate);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') checkAutoUpdate();
+        });
+
         populateFoodDatalist();
+
+        if ('serviceWorker' in navigator) {
+            const swBlob = new Blob([`
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('activate', e => clients.claim());
+                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+            `], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+        }
     </script>
 </body>
 </html>
