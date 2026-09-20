@@ -1246,7 +1246,7 @@
         const EMAILJS_PUBLIC_KEY = "Y9YX8JMUBxs2KrHDi";
 
         // IMPORTANT: Place your actual Google AI Studio key starting with AIzaSy... here
-        const GEMINI_API_KEY = "AQ.Ab8RN6LV-Bgh1XlwuX_XeP2olqxvAebVxEE1ZOtkm6zB9eFvVQ";
+        const GEMINI_API_KEY = "AQ.Ab8RN6IWZZZq6CnylDfNBABd40fymFp8hmb4E447ElMVkQ6niw";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -2055,8 +2055,7 @@
 
         
       /* GEMINI VISION AI FOOD SCANNER (RESIZED & OPTIMIZED) */
-function triggerAICamera() {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY.startsWith("AIzaSy")) {
+function triggerAICamera() {if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
         alert("تکایە کلیلی دروستی Gemini API لە ناو پەڕگەکەدا دابنێ کە بە AIzaSy دەست پێ دەکات.");
         return;
     }
@@ -2071,7 +2070,7 @@ async function handleAIFoodPhoto(input) {
             loadingBox.style.display = 'block';
 
             try {
-                if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY.startsWith("AIzaSy")) {
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
                     throw new Error("تکایە کلیلی دروستی Gemini لە سەرەتای پەڕگەکەدا دابنێ کە بە AIzaSy دەست پێدەکات.");
                 }
 
